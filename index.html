@@ -351,7 +351,7 @@
             const cleanEmail = email.toLowerCase().trim();
             try {
                 const ref = doc(db, "owners", cleanEmail);
-                const snap = await getDoc(ref);
+                const snap = await withTO(getDoc(ref));
                 if (!snap.exists() && cleanEmail === primaryOwnerEmail.toLowerCase()) {
                     await setDoc(ref, { email: cleanEmail, addedAt: serverTimestamp(), isPrimary: true });
                     return true;
@@ -362,11 +362,16 @@
             }
         }
 
+        /* ফোনে শেষ লগইনের ভূমিকা মনে রাখা (অফলাইনে খোলার জন্য) */
+        const withTO = (p, ms = 4000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+        function saveSession(obj) { try { localStorage.setItem('farmSession', JSON.stringify(obj)); } catch (e) {} }
+        function loadSession() { try { return JSON.parse(localStorage.getItem('farmSession') || 'null'); } catch (e) { return null; } }
+
         window.loginWithGoogle = async function () {
             try {
                 await signInWithPopup(auth, new GoogleAuthProvider());
             } catch (error) {
-                showToast("লগইন সমস্যা: " + error.message, "error");
+                showToast(!navigator.onLine ? "ইন্টারনেট নেই। প্রথমবার লগইনের জন্য ইন্টারনেট লাগবে।" : "লগইন সমস্যা: " + error.message, "error");
             }
         };
 
@@ -396,15 +401,22 @@
                 document.getElementById('login-screen').classList.remove('hidden');
                 return;
             }
+            const cs = loadSession();
+            if (!navigator.onLine && cs && cs.uid === user.uid && cs.role) {
+                BASE = cs.BASE || [];
+                if (cs.partnerOf) PARTNER_OF = cs.partnerOf;
+                setupDashboard(cs.role, cs.name, cs.id);
+                return;
+            }
             const email = (user.email || "").toLowerCase();
             if (email.endsWith(STAFF_DOMAIN)) {
                 const phone = email.replace(STAFF_DOMAIN, "");
                 let name = "স্টাফ", ok = false, ownerUid = "";
                 try {
-                    const s = await getDoc(doc(db, "staff", phone));
+                    const s = await withTO(getDoc(doc(db, "staff", phone)));
                     if (s.exists()) { name = s.data().name; ok = true; }
                     else {
-                        const t = await getDoc(doc(db, "tstaff", phone));
+                        const t = await withTO(getDoc(doc(db, "tstaff", phone)));
                         if (t.exists()) { name = t.data().name; ownerUid = t.data().ownerUid || ""; ok = true; }
                     }
                 } catch (_) {}
@@ -420,7 +432,7 @@
                 BASE = [];
                 showToast("মালিক হিসেবে সফলভাবে লগইন হয়েছে!");
                 setupDashboard("owner", user.displayName || "মালিক", email);
-            } else if (await (async () => { try { const p = await getDoc(doc(db, "partners", email)); if (p.exists() && p.data().ownerUid && p.data().ownerUid !== user.uid) { PARTNER_OF = p.data().ownerUid; return true; } } catch (_) {} return false; })()) {
+            } else if (await (async () => { try { const p = await withTO(getDoc(doc(db, "partners", email))); if (p.exists() && p.data().ownerUid && p.data().ownerUid !== user.uid) { PARTNER_OF = p.data().ownerUid; return true; } } catch (_) {} return false; })()) {
                 BASE = ["users", PARTNER_OF];
                 showToast("পার্টনার মালিক হিসেবে লগইন হয়েছে!");
                 setupDashboard("owner", user.displayName || "পার্টনার", email);
@@ -485,7 +497,11 @@
             if (farmsUnsub) { farmsUnsub(); farmsUnsub = null; }
         }
 
-        function setupDashboard(role, name, identifier) {
+        function setupDashboard(role, name, id) {
+            try { saveSession({ uid: auth.currentUser ? auth.currentUser.uid : '', role, name, id, BASE, partnerOf: (typeof PARTNER_OF !== 'undefined' ? PARTNER_OF : null) }); } catch (e) {}
+            return setupDashboardReal(role, name, id);
+        }
+        function setupDashboardReal(role, name, identifier) {
             ME.role = role; ME.name = name; ME.id = identifier; ME.uid = auth.currentUser.uid;
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.remove('hidden');
