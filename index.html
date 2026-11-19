@@ -38,6 +38,20 @@
         #app-screen nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px}
         #app-screen nav button{white-space:nowrap;font-size:1.05rem;padding:9px 14px}
         #app-screen nav button.on{background:var(--ac);color:var(--ai);border-color:var(--ac)}
+/* ডেস্কটপ (বড় স্ক্রিন): বাম দিকে মেনু, ডান দিকে কন্টেন্ট */
+@media(min-width:1024px){
+  #app-screen main{max-width:1280px;display:grid;grid-template-columns:230px minmax(0,1fr);grid-template-areas:"top top" "nav hdr" "nav view";column-gap:22px;row-gap:0;align-items:start}
+  #app-screen .top{grid-area:top;margin-bottom:16px}
+  #app-screen header{grid-area:hdr;margin-bottom:12px}
+  #app-screen nav{grid-area:nav;flex-direction:column;overflow:visible;padding-bottom:0;position:sticky;top:12px;gap:6px}
+  #app-screen nav button{width:100%;text-align:left;white-space:normal;font-size:1rem;padding:10px 14px}
+  #app-screen #v{grid-area:view;min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  #app-screen #v>*{grid-column:1/-1;min-width:0}
+  #app-screen #v>section,#app-screen #v>.pc,#app-screen #v>.card{grid-column:span 1}
+}
+@media(min-width:1024px) and (max-width:1199px){
+  #app-screen main{grid-template-columns:200px minmax(0,1fr)}
+}
         #app-screen #strip{background:var(--go);color:#1c1a10;border-radius:10px;padding:8px 12px;margin:4px 0 12px;font-weight:600}
         #app-screen #strip:empty{display:none}
         #app-screen section{background:var(--sf);border:1px solid var(--ln);border-radius:12px;padding:14px;margin-bottom:14px}
