@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>আমার খামার আমার স্বপ্ন</title>
+<meta name="theme-color" content="#2d6a3e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    font-family: "Noto Sans Bengali", system-ui, sans-serif;
+    color: #1d2a22;
+    background: linear-gradient(180deg, #f1faf3 0%, #ffffff 60%);
+  }
+  header { text-align: center; padding: 28px 16px 8px; }
+  .logo { width: 72px; height: 72px; border-radius: 18px; }
+  h1 { margin: 10px 0 0; font-size: 1.5em; color: #1f5c3a; }
+  .pick {
+    display: inline-block; margin: 18px 0 20px;
+    background: #1f7a43; color: #fff;
+    padding: 10px 26px; border-radius: 999px; font-size: 1.05em; font-weight: 600;
+  }
+  .wrap { text-align: center; }
+  .grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    max-width: 760px; margin: 0 auto; padding: 0 16px;
+  }
+  .card {
+    background: #fff; border: 1px solid #cfe6d6; border-radius: 16px;
+    padding: 22px 10px; cursor: pointer; font: inherit; color: inherit;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .card:hover { box-shadow: 0 4px 14px rgba(31, 92, 58, .15); }
+  .card:focus-visible { outline: 3px solid #2e7d4f; outline-offset: 2px; }
+  .fname { font-size: 1.15em; font-weight: 700; color: #1f5c3a; }
+  .fsub { background: #e8f3ec; border-radius: 999px; padding: 4px 12px; font-size: .95em; }
+  .badge { color: #8a6d00; font-size: .9em; }
+  .slogan { margin: 26px 0 0; color: #2e7d4f; font-weight: 600; text-align: center; }
+  .login { text-align: center; padding: 40px 16px; }
+  .btn {
+    background: #1f7a43; color: #fff; border: 0; border-radius: 999px;
+    padding: 12px 28px; font: inherit; font-size: 1.05em; cursor: pointer;
+  }
+  .small { margin-top: 18px; font-size: .95em; }
+  .small a { color: #1f7a43; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+    background: #1d2a22; color: #fff; padding: 12px 22px; border-radius: 12px;
+    display: none;
+  }
+  .toast.show { display: block; }
+  @media (max-width: 420px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <img class="logo" src="icon-192.png" alt="">
+  <h1>আমার খামার আমার স্বপ্ন</h1>
+</header>
+
+<section id="login" class="login" hidden>
+  <p>চালিয়ে যেতে Gmail দিয়ে লগইন করুন</p>
+  <button class="btn" id="gBtn" type="button">Gmail দিয়ে লগইন</button>
+  <p class="small"><a href="layer/">কর্মী হলে এখান থেকে লগইন করুন</a></p>
+</section>
+
+<section id="selector" hidden>
+  <div class="wrap"><span class="pick">আপনার খামার নির্বাচন করুন</span></div>
+  <div class="grid" id="grid"></div>
+  <p class="slogan">সফল খামার, সমৃদ্ধ জীবন</p>
+</section>
+
+<div class="toast" id="toast">শীঘ্রই আসছে</div>
+
+<script src="farms.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // একই Firebase প্রজেক্ট, যা layer/index.html ব্যবহার করে
+  const app = initializeApp({
+    apiKey: "AIzaSyCyHoQMsDGRKPRl0XXqHv6OtaDfejNiHdo",
+    authDomain: "poultry-farm-app-2b196.firebaseapp.com",
+    projectId: "poultry-farm-app-2b196",
+    storageBucket: "poultry-farm-app-2b196.firebasestorage.app",
+    messagingSenderId: "332658852671",
+    appId: "1:332658852671:web:a754a78c3b0b2b237d898a",
+    measurementId: "G-YG8CFFQNDH"
+  });
+  const auth = getAuth(app);
+
+  const STAFF_DOMAIN = "@staff.poultryfarm.app";
+  const $ = (id) => document.getElementById(id);
+
+  function showToast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(() => t.classList.remove("show"), 1800);
+  }
+
+  function renderFarms() {
+    const grid = $("grid");
+    grid.innerHTML = "";
+    FARMS.forEach((f) => {
+      const btn = document.createElement("button");
+      btn.className = "card";
+      btn.type = "button";
+      btn.innerHTML =
+        `<span class="fname"></span><span class="fsub"></span>` +
+        (f.status === "live" ? "" : `<span class="badge">শীঘ্রই আসছে</span>`);
+      btn.querySelector(".fname").textContent = f.name;
+      btn.querySelector(".fsub").textContent = f.subtitle;
+      btn.addEventListener("click", () => {
+        if (f.status === "live") location.href = f.path;
+        else showToast("শীঘ্রই আসছে");
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  $("gBtn").addEventListener("click", async () => {
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (e) {
+      showToast("লগইন হয়নি, আবার চেষ্টা করুন");
+    }
+  });
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      $("selector").hidden = true;
+      $("login").hidden = false;
+      return;
+    }
+    // কর্মীরা সরাসরি নিজের অ্যাপে যাবেন
+    if (user.email && user.email.endsWith(STAFF_DOMAIN)) {
+      location.replace("layer/");
+      return;
+    }
+    $("login").hidden = true;
+    $("selector").hidden = false;
+    renderFarms();
+  });
+</script>
+</body>
+</html>
