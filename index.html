@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>পোল্ট্রি ফার্ম ম্যানেজমেন্ট প্রো</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2d6a3e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -304,7 +308,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc, writeBatch, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc, writeBatch, query, where, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCyHoQMsDGRKPRl0XXqHv6OtaDfejNiHdo",
@@ -318,7 +322,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
         const primaryOwnerEmail = "hasannahidgmeil@gmail.com";
         const STAFF_DOMAIN = "@staff.poultryfarm.app";
@@ -1871,18 +1875,24 @@
                     if (!confirm('এই খামারের সব হিসাব মুছে শূন্য হয়ে যাবে। এটি আর ফেরানো যাবে না। চালিয়ে যাবেন?')) return;
                     const word = prompt('নিশ্চিত করতে নিচের বক্সে লিখুন: রিসেট');
                     if (word === null || word.trim() !== 'রিসেট') { showToast('রিসেট বাতিল হয়েছে'); return; }
-                    showToast('রিসেট হচ্ছে, একটু অপেক্ষা করুন...');
+                    showToast('রিসেট হচ্ছে...');
                     try {
+                        const pending = [];
                         for (const k of ['batches', 'feeds', 'buys', 'logs', 'fin', 'hsold', 'assistant']) {
                             const snap = await getDocs(fcol(k));
                             const docs = snap.docs;
-                            for (let s = 0; s < docs.length; s += 400) {
+                            for (let st = 0; st < docs.length; st += 400) {
                                 const wb = writeBatch(db);
-                                docs.slice(s, s + 400).forEach(d => wb.delete(d.ref));
-                                await wb.commit();
+                                docs.slice(st, st + 400).forEach(d => wb.delete(d.ref));
+                                pending.push(wb.commit());
                             }
                         }
-                        showToast('সব হিসাব রিসেট হয়েছে, এখন সব শূন্য');
+                        if (navigator.onLine) {
+                            await Promise.all(pending);
+                            showToast('সব হিসাব রিসেট হয়েছে, এখন সব শূন্য');
+                        } else {
+                            showToast('ফোন থেকে মুছে গেছে। ইন্টারনেট এলে সার্ভার থেকেও মুছবে।');
+                        }
                     } catch (err) { showToast('রিসেট সমস্যা: ' + err.message, 'error'); }
                 }
                 else if (a === 'delphoto') { await setDoc(doc(db, 'profiles', ME.uid), { photo: '' }, { merge: true }); showToast("ছবি মুছে ফেলা হয়েছে"); }
