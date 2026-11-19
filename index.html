@@ -58,7 +58,7 @@
   .tile {
     display: flex; align-items: center; gap: 8px; min-width: 0; text-align: left;
     cursor: pointer; font: inherit; color: inherit;
-    background: linear-gradient(180deg, #ffffff, #f6fcf8); border: 1px solid var(--line);
+    background: linear-gradient(180deg, #ffffff, #f6fcf8); border: 2px solid var(--g4);
     border-radius: 16px; padding: 8px 10px; box-shadow: 0 2px 8px rgba(20, 83, 45, .06);
     transition: transform .15s, box-shadow .15s;
   }
@@ -70,7 +70,14 @@
     flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
     background: var(--g2); color: #fff; font-size: 1.05em; font-weight: 700;
   }
-  .tile.hi { border: 2px solid var(--g4); background: linear-gradient(135deg, #f3fff6, #ffffff); }
+  .menu.three { grid-template-columns: repeat(3, 1fr); }
+  .tile .art svg { width: 100%; height: 100%; }
+  .tile.hi { background: linear-gradient(135deg, #f3fff6, #ffffff); }
+  .tile:active, .tile.pressed {
+    background: linear-gradient(135deg, var(--g3), var(--g1)); border-color: var(--g1); transform: scale(.98);
+    box-shadow: 0 6px 16px rgba(20, 83, 45, .35);
+  }
+  .tile:active .t, .tile.pressed .t { color: #fff; }
 
   /* নিচের আর্থিক সারসংক্ষেপ */
   .fin-strip { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); padding: 8px 4px;
@@ -82,6 +89,105 @@
   .fin-i small { display: block; color: var(--muted); font-size: .75em; line-height: 1.3; }
   .fin-i b { display: block; color: var(--g1); font-size: .95em; line-height: 1.3; }
   .fin-i b.neg { color: var(--red); }
+
+  /* ===== AI-BANNER:START (পরে সরাতে এই CSS ব্লক ও HTML ব্লক মুছে ফেলুন) ===== */
+  .ai-banner { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 8px 14px 8px 8px;
+    background: linear-gradient(90deg, #e9f9ef, #f5fffa 60%, #dff4ea); border-radius: 18px; }
+  .ai-robot { height: 78px; width: auto; flex: none; object-fit: contain; }
+  .ai-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .ai-text b { color: var(--g1); font-size: 1.05em; }
+  .ai-text span { color: var(--muted); font-size: .85em; }
+  .ai-btn { flex: none; background: linear-gradient(90deg, var(--g2), var(--g3)); color: #fff; border: 0;
+    border-radius: 999px; padding: 10px 16px; font: inherit; font-weight: 700; font-size: .9em; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(31, 122, 67, .3); }
+  .ai-btn:focus-visible { outline: 3px solid var(--g4); outline-offset: 2px; }
+  @media (max-width: 600px) { .ai-robot { height: 56px; } .ai-btn { padding: 8px 12px; font-size: .8em; } }
+  /* ===== AI-BANNER:END ===== */
+  .toast { position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%); background: #1d2a22; color: #fff;
+    padding: 11px 20px; border-radius: 12px; display: none; font-size: .95em; z-index: 50; }
+  .toast.show { display: block; }
+
+  /* ক্যালকুলেটর ও নোট */
+  textarea { font: inherit; font-size: 1rem; color: var(--ink); width: 100%; padding: 11px 12px;
+    border: 1px solid var(--line); border-radius: 12px; background: #fbfefc; min-height: 90px; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--g3); border-color: transparent; }
+  .sub-h { font-size: .95em; color: var(--g1); margin: 18px 0 10px; font-weight: 700; }
+  .calc-disp { font-size: 1.9em; font-weight: 800; color: var(--g1); text-align: right; background: var(--mint);
+    border-radius: 14px; padding: 12px 14px; min-height: 64px; overflow: hidden; word-break: break-all; }
+  .keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+  .key { padding: 13px 0; border: 1px solid var(--line); border-radius: 14px; background: #fff; color: var(--g1);
+    font: inherit; font-size: 1.15em; font-weight: 700; cursor: pointer; }
+  .key:active { transform: scale(.97); }
+  .key.op { background: var(--mint); }
+  .key.eq { grid-row: span 2; background: linear-gradient(135deg, var(--g2), var(--g3)); color: #fff; border: 0; }
+  .key.zero { grid-column: span 2; }
+  .key:focus-visible { outline: 3px solid var(--g3); outline-offset: 2px; }
+  .helper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .helper-out { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .helper-out div { background: linear-gradient(90deg, #e8f6ec, #f7fff9); border: 1px dashed var(--g3); border-radius: 14px; padding: 10px 12px; }
+  .helper-out small { color: var(--muted); display: block; font-size: .85em; }
+  .helper-out b { color: var(--g1); font-size: 1.25em; }
+  .note-text { white-space: pre-wrap; color: var(--ink); margin-top: 4px; font-size: .95em; }
+  @media (max-width: 600px) { .helper { grid-template-columns: 1fr; } .helper-out { grid-template-columns: 1fr; } }
+
+  /* প্রগ্রেস পাতা */
+  .ov-top { display: grid; grid-template-columns: 1fr 3fr; gap: 12px; margin-bottom: 12px; }
+  .ov-top .summary { margin: 0; }
+  .prog-tile { flex-direction: column; justify-content: center; text-align: center; min-height: 150px; }
+  .prog-tile .art { width: 66px; height: 66px; }
+  .prog-tile .t { flex: none; padding: 0; }
+  .prog-tile .arr { display: none; }
+  .prog-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .ph-left { display: flex; align-items: center; gap: 10px; }
+  .ph-ic { width: 48px; height: 48px; display: inline-block; }
+  .ph-ic svg { width: 100%; height: 100%; }
+  .prog-head h2 { margin: 0; font-size: 1.25em; color: var(--g1); }
+  .prog-head small { color: var(--muted); }
+  .seg { display: inline-flex; background: var(--mint); border-radius: 999px; padding: 4px; }
+  .seg button { border: 0; background: transparent; padding: 7px 14px; border-radius: 999px; font: inherit; font-weight: 600; color: var(--g1); cursor: pointer; }
+  .seg button.on { background: var(--g2); color: #fff; }
+  .datenav { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 14px; font-weight: 700; color: var(--g1); }
+  .datenav button { background: var(--mint); border: 0; color: var(--g1); width: 34px; height: 34px; border-radius: 50%; font-size: 1.2em; cursor: pointer; }
+  .donut-card { margin-top: 12px; display: flex; align-items: center; gap: 14px; position: relative; }
+  .ring { width: 118px; height: 118px; border-radius: 50%; flex: none; display: grid; place-items: center;
+    background: conic-gradient(var(--g2) var(--p), #d9efe0 0); }
+  .ring-in { width: 80%; height: 80%; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-in b { color: var(--g1); font-size: 1.25em; }
+  .ring-in small { color: var(--muted); font-size: .75em; }
+  .donut-info { display: flex; flex-direction: column; }
+  .donut-info small { color: var(--muted); }
+  .donut-info b { color: var(--g1); font-size: 1.45em; line-height: 1.2; }
+  .badge-pct { position: absolute; right: 14px; top: 14px; width: 62px; height: 62px; border-radius: 50%;
+    background: var(--mint); color: var(--g1); font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 1.05em; }
+  .badge-pct small { font-size: .6em; font-weight: 600; color: var(--muted); }
+  .mini4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px; }
+  .mini { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 10px 6px; text-align: center; }
+  .mini img { height: 40px; width: auto; max-width: 100%; object-fit: contain; }
+  .mini small { display: block; color: var(--muted); font-size: .75em; margin-top: 4px; line-height: 1.3; }
+  .mini b { color: var(--g1); font-size: .95em; }
+  .bars { display: flex; gap: 6px; align-items: flex-end; }
+  .bar-col { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .bar-col em { font-style: normal; font-size: .7em; color: var(--g1); font-weight: 700; white-space: nowrap; }
+  .bar-track { height: 130px; width: 100%; display: flex; align-items: flex-end; justify-content: center;
+    border-bottom: 1px solid var(--line); }
+  .bar-fill { width: 70%; max-width: 30px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, var(--g4), var(--g1)); }
+  .bar-col span { font-size: .7em; color: var(--muted); white-space: nowrap; }
+  .fin-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .ring2 { width: 130px; height: 130px; border-radius: 50%; flex: none; display: grid; place-items: center; }
+  .ring2 .ring-in small { font-size: .8em; }
+  .lrow { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; border-bottom: 1px dashed var(--line); flex: 1; min-width: 180px; }
+  .lrow:last-child { border-bottom: 0; }
+  .lrow .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+  .lrow b { color: var(--g1); }
+  .tagline { text-align: center; color: var(--g1); background: #e4f5ea; border-radius: 16px; padding: 12px; margin-top: 16px; font-size: .92em; }
+  @media (max-width: 600px) {
+    .ov-top { grid-template-columns: 1fr; }
+    .mini4 { grid-template-columns: repeat(2, 1fr); }
+    .donut-card { flex-wrap: wrap; justify-content: center; text-align: center; }
+    .donut-info { align-items: center; }
+    .ring { width: 100px; height: 100px; }
+    .bar-track { height: 110px; }
+  }
 
   .stat { text-align: center; padding: 8px 6px; border-left: 1px solid var(--line); }
   .stat:first-child { border-left: 0; }
@@ -173,6 +279,7 @@
 </header>
 
 <main id="app"></main>
+<div class="toast" id="toast">শীঘ্রই আসছে</div>
 
 <script>
 // ---------- ছবি/আইকন (ডিজাইন থেকে নেওয়া) ----------
@@ -195,7 +302,7 @@ const IMG = {
 
 // ---------- ডেটা সংরক্ষণ (এই ব্রাউজারে). পরে Firebase-এর সঙ্গে যুক্ত হবে ----------
 const KEY = 'fishFarm.v1';
-const empty = () => ({ ponds: [], stocks: [], feed: [], health: [], water: [], sales: [], expenses: [] });
+const empty = () => ({ ponds: [], stocks: [], feed: [], health: [], water: [], sales: [], expenses: [], notes: [] });
 let db = load();
 function load() {
   try { return Object.assign(empty(), JSON.parse(localStorage.getItem(KEY)) || {}); }
@@ -205,7 +312,8 @@ function save() { localStorage.setItem(KEY, JSON.stringify(db)); }
 
 // ---------- সাহায্যকারী ----------
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const today = () => fmtDate(new Date());
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const bn = (n) => Number(n || 0).toLocaleString('bn-BD', { maximumFractionDigits: 2 });
 const money = (n) => '৳ ' + Number(n || 0).toLocaleString('bn-BD', { maximumFractionDigits: 0 });
@@ -256,6 +364,15 @@ function pondSelect() {
     db.ponds.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('') + '</select>';
 }
 
+// নতুন আইকন (SVG)
+const NOTE_SVG = '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dff3e6"/></linearGradient></defs><rect x="12" y="8" width="38" height="48" rx="6" fill="url(#gN)" stroke="#2e9d5a" stroke-width="2.5"/><rect x="20" y="4" width="22" height="8" rx="4" fill="#1f7a43"/><line x1="20" y1="24" x2="42" y2="24" stroke="#2e9d5a" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="33" x2="42" y2="33" stroke="#2e9d5a" stroke-width="3" stroke-linecap="round"/><line x1="20" y1="42" x2="34" y2="42" stroke="#2e9d5a" stroke-width="3" stroke-linecap="round"/><path d="M44 44 L56 22 L60 25 L48 47 Z" fill="#f5b82e" stroke="#b7791f" stroke-width="1.5"/><path d="M44 44 L48 47 L44 49 Z" fill="#3a2a1a"/></svg>';
+const CALC_SVG = '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect x="12" y="6" width="40" height="52" rx="8" fill="#1f7a43"/><rect x="18" y="13" width="28" height="11" rx="3" fill="#e8f6ec"/><g fill="#ffffff"><rect x="18" y="30" width="7" height="6" rx="2"/><rect x="28.5" y="30" width="7" height="6" rx="2"/><rect x="39" y="30" width="7" height="6" rx="2"/><rect x="18" y="39" width="7" height="6" rx="2"/><rect x="28.5" y="39" width="7" height="6" rx="2"/><rect x="39" y="39" width="7" height="6" rx="2"/><rect x="18" y="48" width="7" height="5" rx="2"/><rect x="28.5" y="48" width="7" height="5" rx="2"/></g><rect x="39" y="48" width="7" height="5" rx="2" fill="#f5b82e"/></svg>';
+function tileSvg(id, svg, title) {
+  return `<button class="tile" data-go="${id}" type="button">
+    <span class="art">${svg}</span>
+    <span class="t">${title}</span></button>`;
+}
+
 function stat(k, v) { return `<div class="stat"><div class="k">${k}</div><div class="v">${v}</div></div>`; }
 function hstat(icon, k, v) {
   return `<div class="hstat"><img src="${icon}" alt=""><span class="k">${k}</span><span class="v">${v}</span></div>`;
@@ -264,7 +381,7 @@ function tile(id, art, title, cls = '') {
   return `<button class="tile ${cls}" data-go="${id}" type="button">
     <span class="art"><img src="${art}" alt=""></span>
     <span class="t">${title}</span>
-    <span class="arr" aria-hidden="true">›</span></button>`;
+  </button>`;
 }
 function finStrip(t, clickable) {
   const tag = clickable ? 'button' : 'div';
@@ -275,12 +392,203 @@ function finStrip(t, clickable) {
     <span class="fin-i"><img src="${IMG.fTrophy}" alt=""><span><small>বর্তমান লাভ</small><b class="${t.profit < 0 ? 'neg' : ''}">${money(t.profit)}</b></span></span>
   </${tag}>`;
 }
+function stockKg(s) { return s.kg != null ? s.kg : (s.avgKg ? s.count * s.avgKg : 0); }
 function delBtn(kind, id) { return `<button class="del" data-del="${kind}" data-id="${id}" type="button">মুছুন</button>`; }
+
+// ---------- ক্যালকুলেটর ----------
+let calc = { disp: '0', acc: null, op: null, fresh: true };
+const BN_DIGITS = '০১২৩৪৫৬৭৮৯';
+const toBn = (s) => String(s).replace(/[0-9]/g, (d) => BN_DIGITS[d]);
+
+function calcApply() {
+  const a = calc.acc ?? 0, b = Number(calc.disp);
+  let r;
+  if (calc.op === '+') r = a + b;
+  else if (calc.op === '−') r = a - b;
+  else if (calc.op === '×') r = a * b;
+  else if (calc.op === '÷') r = b === 0 ? NaN : a / b;
+  else r = b;
+  if (!isFinite(r)) { calc = { disp: 'ত্রুটি', acc: null, op: null, fresh: true }; return; }
+  calc.acc = r;
+  calc.disp = String(Math.round(r * 1e10) / 1e10);
+}
+function calcKey(k) {
+  if (calc.disp === 'ত্রুটি' && k !== 'C') calc = { disp: '0', acc: null, op: null, fresh: true };
+  if (/^[0-9]$/.test(k)) {
+    calc.disp = calc.fresh || calc.disp === '0' ? k : calc.disp + k;
+    calc.fresh = false;
+  } else if (k === '.') {
+    if (calc.fresh) { calc.disp = '0.'; calc.fresh = false; }
+    else if (!calc.disp.includes('.')) calc.disp += '.';
+  } else if (k === 'C') {
+    calc = { disp: '0', acc: null, op: null, fresh: true };
+  } else if (k === '⌫') {
+    calc.disp = calc.disp.length > 1 ? calc.disp.slice(0, -1) : '0';
+  } else if (['+', '−', '×', '÷'].includes(k)) {
+    if (calc.op && !calc.fresh) calcApply(); else calc.acc = Number(calc.disp);
+    calc.op = k; calc.fresh = true;
+  } else if (k === '=') {
+    if (calc.op) { calcApply(); calc.op = null; calc.fresh = true; }
+  }
+  const el = document.getElementById('calc-disp');
+  if (el) el.textContent = toBn(calc.disp);
+}
+function calcHtml() {
+  const rows = [
+    ['C', '⌫', '÷', '×'],
+    ['7', '8', '9', '−'],
+    ['4', '5', '6', '+'],
+    ['1', '2', '3'],
+  ];
+  const keyBtn = (k) => {
+    const cls = ['+', '−', '×', '÷', 'C', '⌫'].includes(k) ? 'key op' : 'key';
+    return `<button class="${cls}" data-calc="${k}" type="button">${toBn(k)}</button>`;
+  };
+  return `<div class="keys">
+    ${rows.map((r) => r.map(keyBtn).join('')).join('')}
+    <button class="key eq" data-calc="=" type="button">=</button>
+    <button class="key zero" data-calc="0" type="button">০</button>
+    <button class="key" data-calc="." type="button">.</button>
+  </div>`;
+}
+
+// পিস ও কেজির দ্রুত হিসাব (সেভ হয় না, শুধু দেখায়)
+function updateHelper(root) {
+  if (!root) return;
+  const pcs = Number(root.querySelector('[name="hPcs"]').value) || 0;
+  const avg = Number(root.querySelector('[name="hAvg"]').value) || 0;
+  const price = Number(root.querySelector('[name="hPrice"]').value) || 0;
+  const kg = pcs * avg;
+  root.querySelector('[data-hkg]').textContent = bn(kg) + ' কেজি';
+  root.querySelector('[data-hamt]').textContent = money(kg * price);
+}
+function helperHtml() {
+  return `<div data-helper>
+    <div class="helper">
+      <label class="f">মাছের সংখ্যা (পিস)<input name="hPcs" type="number" min="0" step="any" inputmode="decimal" value="0"></label>
+      <label class="f">গড় ওজন প্রতি পিস (কেজি)<input name="hAvg" type="number" min="0" step="any" inputmode="decimal" value="0"></label>
+      <label class="f">প্রতি কেজি দাম (৳)<input name="hPrice" type="number" min="0" step="any" inputmode="decimal" value="0"></label>
+    </div>
+    <div class="helper-out">
+      <div><small>মোট ওজন</small><b data-hkg>${bn(0)} কেজি</b></div>
+      <div><small>মোট দাম</small><b data-hamt>${money(0)}</b></div>
+    </div>
+  </div>`;
+}
+
+// ---------- নোট ----------
+function notesHtml() {
+  return `
+    <section class="card section">
+      <h2 class="sec">নোট</h2>
+      <form class="form" data-form="note">
+        <label class="f full">শিরোনাম<input name="title" placeholder="যেমন: ওষুধ কেনার তালিকা"></label>
+        <label class="f full">লেখা<textarea name="text" required placeholder="এখানে লিখুন"></textarea></label>
+        <label class="f">তারিখ<input name="date" type="date" value="${today()}"></label>
+        <div class="full"><button class="btn" type="submit">নোট সেভ করুন</button></div>
+      </form>
+      ${db.notes.length ? `<div class="list section">${[...db.notes].reverse().map((n) => `
+        <div class="item">
+          <div class="main">
+            <b>${esc(n.title || 'শিরোনাম নেই')}</b> <span class="meta">· ${n.date}</span>
+            <div class="note-text">${esc(n.text)}</div>
+          </div>
+          ${delBtn('note', n.id)}
+        </div>`).join('')}</div>` : '<div class="empty">কোনো নোট নেই।</div>'}
+    </section>`;
+}
+
+// ---------- প্রগ্রেস: নাম ও আইকন ----------
+const WEEK_BN = ['শনি', 'রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র'];
+const MONTHS = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+const MON_SHORT = ['জানু', 'ফেব্রু', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্টে', 'অক্টো', 'নভে', 'ডিসে'];
+const PLBL = { week: 'সপ্তাহ', month: 'মাস', year: 'বছর' };
+const PROG_SVG = '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="24" fill="none" stroke="#d9efe0" stroke-width="9"/><circle cx="32" cy="32" r="24" fill="none" stroke="#2e9d5a" stroke-width="9" stroke-linecap="round" stroke-dasharray="108 151" transform="rotate(-90 32 32)"/><circle cx="32" cy="32" r="11" fill="#e8f6ec"/><path d="M32 25 c4 5 5 8 5 10 a5 5 0 0 1 -10 0 c0 -2 1 -5 5 -10z" fill="#2e9d5a"/></svg>';
+let prog = { period: 'week', anchor: (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; })() };
+
+function periodRange() {
+  const a = new Date(prog.anchor);
+  if (prog.period === 'week') {
+    const s = new Date(a); s.setDate(a.getDate() - ((a.getDay() + 1) % 7));
+    const e = new Date(s); e.setDate(s.getDate() + 6);
+    return { start: s, end: e };
+  }
+  if (prog.period === 'month') return { start: new Date(a.getFullYear(), a.getMonth(), 1), end: new Date(a.getFullYear(), a.getMonth() + 1, 0) };
+  return { start: new Date(a.getFullYear(), 0, 1), end: new Date(a.getFullYear(), 11, 31) };
+}
+function periodLabel() {
+  const { start, end } = periodRange();
+  if (prog.period === 'year') return toBn(start.getFullYear());
+  if (prog.period === 'month') return `${MONTHS[start.getMonth()]} ${toBn(start.getFullYear())}`;
+  const sameMonth = start.getMonth() === end.getMonth();
+  return `${bn(start.getDate())} - ${bn(end.getDate())} ${sameMonth ? '' : MONTHS[start.getMonth()] + ' '}${MONTHS[end.getMonth()]} ${toBn(end.getFullYear())}`;
+}
+function inPeriod(dateStr) {
+  if (!dateStr) return false;
+  const { start, end } = periodRange();
+  return dateStr >= fmtDate(start) && dateStr <= fmtDate(end);
+}
+function shiftPeriod(dir) {
+  const a = new Date(prog.anchor);
+  if (prog.period === 'week') a.setDate(a.getDate() + 7 * dir);
+  else if (prog.period === 'month') a.setMonth(a.getMonth() + dir);
+  else a.setFullYear(a.getFullYear() + dir);
+  prog.anchor = a;
+}
+function progStats() {
+  const { start, end } = periodRange();
+  const sales = db.sales.filter((s) => inPeriod(s.date));
+  const pieces = sum(sales.filter((s) => s.mode === 'piece'), (s) => s.qty);
+  const kg = sum(sales.filter((s) => s.mode === 'kg'), (s) => s.qty);
+  const revenue = sum(sales, (s) => s.total);
+  const expenses = sum(db.expenses.filter((e) => inPeriod(e.date)), (e) => e.amount)
+    + sum(db.feed.filter((f) => f.type === 'in' && inPeriod(f.date)), (f) => f.price);
+  const dead = sum(db.health.filter((h) => inPeriod(h.date)), (h) => h.deaths);
+  const feedKg = sum(db.feed.filter((f) => f.type === 'out' && inPeriod(f.date)), (f) => f.kg);
+  const stocked = sum(db.stocks, (s) => s.count);
+  const days = Math.round((end - start) / 864e5) + 1;
+  return {
+    pieces, kg, revenue, expenses, dead, feedKg, stocked, days,
+    pct: stocked ? Math.min(100, Math.round(pieces / stocked * 100)) : 0,
+    avg: revenue / days,
+    profit: revenue - expenses,
+    margin: revenue > 0 ? Math.round((revenue - expenses) / revenue * 100) : 0,
+  };
+}
+function periodBuckets() {
+  const { start, end } = periodRange();
+  if (prog.period === 'week') {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const key = fmtDate(d);
+      return { label: WEEK_BN[i], value: sum(db.sales.filter((s) => s.date === key), (s) => s.total) };
+    });
+  }
+  if (prog.period === 'month') {
+    const y = start.getFullYear(), m = start.getMonth(), days = end.getDate();
+    const n = Math.ceil(days / 7);
+    return Array.from({ length: n }, (_, i) => {
+      const from = fmtDate(new Date(y, m, 1 + i * 7));
+      const to = fmtDate(new Date(y, m, Math.min(days, (i + 1) * 7)));
+      return { label: 'সপ্তাহ ' + bn(i + 1), value: sum(db.sales.filter((s) => s.date >= from && s.date <= to), (s) => s.total) };
+    });
+  }
+  const y = start.getFullYear();
+  return MON_SHORT.map((label, m) => {
+    const key = y + '-' + String(m + 1).padStart(2, '0');
+    return { label, value: sum(db.sales.filter((s) => s.date && s.date.startsWith(key)), (s) => s.total) };
+  });
+}
+const shortNum = (n) => (n >= 1000 ? bn((n / 1000).toFixed(1)) + 'k' : bn(n));
+function barsTitle() {
+  return prog.period === 'week' ? 'দৈনিক বিক্রয় (৳)' : prog.period === 'month' ? 'সাপ্তাহিক বিক্রয় (৳)' : 'মাসভিত্তিক বিক্রয় (৳)';
+}
 
 // ---------- পাতাসমূহ ----------
 const TITLES = {
   home: 'মাছের খামার', pond: 'পুকুর ব্যবস্থাপনা', fish: 'মাছের তথ্য', feed: 'খাবারের হিসাব',
   water: 'পানি ও পরিবেশ', health: 'স্বাস্থ্য ও ওষুধ', overview: 'এক নজরে সব', finance: 'আর্থিক হিসাব',
+  calc: 'ক্যালকুলেটর', notes: 'নোট', progress: 'প্রগ্রেস',
 };
 
 const VIEWS = {
@@ -304,7 +612,15 @@ const VIEWS = {
       ${tile('health', IMG.tMed, 'স্বাস্থ্য ও ওষুধ')}
       ${tile('overview', IMG.tChart, 'এক নজরে সব', 'hi')}
     </div>
-    ${finStrip(t, true)}`;
+    <div class="menu three">${tileSvg('progress', PROG_SVG, 'প্রগ্রেস')}${tileSvg('calc', CALC_SVG, 'ক্যালকুলেটর')}${tileSvg('notes', NOTE_SVG, 'নোট')}</div>
+    ${finStrip(t, true)}
+    <!-- AI-BANNER:START (পরে সরাতে এই HTML ব্লক ও CSS ব্লক মুছে ফেলুন) -->
+    <section class="card ai-banner" aria-label="AI মাছ সহকারী">
+      <img class="ai-robot" src="data:image/webp;base64,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" alt="">
+      <div class="ai-text"><b>AI মাছ সহকারী</b><span>আপনার প্রশ্ন করুন, আমি সাহায্য করবো...</span></div>
+      <button class="ai-btn" data-action="ai" type="button">💬 জিজ্ঞাসা করুন</button>
+    </section>
+    <!-- AI-BANNER:END -->`;
   },
 
   pond() {
@@ -341,11 +657,29 @@ const VIEWS = {
       <form class="form" data-form="stock">
         <label class="f full">পুকুর${pondSelect()}</label>
         <label class="f">মাছের প্রজাতি<input name="species" placeholder="যেমন: রুই, কাতলা, তেলাপিয়া"></label>
-        <label class="f">মাছের সংখ্যা (টি)<input name="count" type="number" min="0" step="1" required inputmode="numeric"></label>
-        <label class="f">গড় ওজন (কেজি)<input name="avgKg" type="number" min="0" step="any" inputmode="decimal"></label>
         <label class="f">তারিখ<input name="date" type="date" value="${today()}" required></label>
+        <div class="full">
+          <div class="pills">
+            <label class="pill"><input type="radio" name="unit" value="piece" checked><span>পিস হিসাবে</span></label>
+            <label class="pill"><input type="radio" name="unit" value="kg"><span>কেজি হিসাবে</span></label>
+          </div>
+        </div>
+        <label class="f"><span data-sqlabel>মাছের সংখ্যা (পিস)</span><input name="qty" type="number" min="0" step="any" required inputmode="decimal"></label>
+        <label class="f">গড় ওজন প্রতি পিস (কেজি)<input name="avgKg" type="number" min="0" step="any" required inputmode="decimal"></label>
+        <div class="full">
+          <div class="pills">
+            <label class="pill"><input type="radio" name="basis" value="piece" checked><span>প্রতি পিস দাম</span></label>
+            <label class="pill"><input type="radio" name="basis" value="kg"><span>প্রতি কেজি দাম</span></label>
+          </div>
+        </div>
+        <label class="f full"><span data-spbasis>প্রতি পিস দাম (৳)</span><input name="price" type="number" min="0" step="any" inputmode="decimal" placeholder="না দিলে মূল্য ধরা হবে না"></label>
+        <div class="full preview">
+          <div class="calc" data-spcalc>০ পিস · ০ কেজি</div>
+          <div class="amt" data-spamt>৳ ০</div>
+        </div>
         <div class="full"><button class="btn" type="submit">যোগ করুন</button></div>
       </form>
+      <p class="note">গড় ওজন দিলে পিস ও কেজির মধ্যে হিসাব আপনা-আপনি ঠিক হবে।</p>
     </section>
     <section class="card section">
       <h2 class="sec">পুকুরভিত্তিক মাছ</h2>
@@ -360,7 +694,8 @@ const VIEWS = {
         <div class="item">
           <div class="main">
             <b>${esc(s.species || 'প্রজাতি লেখা নেই')}</b>
-            <div class="meta">${esc(pondName(s.pondId))} · ${bn(s.count)} টি${s.avgKg ? ' · গড় ' + bn(s.avgKg) + ' কেজি' : ''} · ${s.date}</div>
+            <div class="meta">${esc(pondName(s.pondId))} · ${bn(s.count)} পিস · ${bn(stockKg(s))} কেজি · ${s.date}</div>
+            ${s.value ? `<div class="meta">মূল্য: ${money(s.value)}</div>` : ''}
           </div>
           ${delBtn('stock', s.id)}
         </div>`).join('')}</div>` : '<div class="empty">কোনো মাছের রেকর্ড নেই।</div>'}
@@ -386,8 +721,19 @@ const VIEWS = {
           </select>
         </label>
         <label class="f">তারিখ<input name="date" type="date" value="${today()}" required></label>
-        <label class="f">পরিমাণ (কেজি)<input name="kg" type="number" min="0" step="any" required inputmode="decimal"></label>
-        <label class="f">মোট দাম (৳, শুধু কেনার সময়)<input name="price" type="number" min="0" step="any" inputmode="decimal"></label>
+        <div class="full">
+          <div class="pills">
+            <label class="pill"><input type="radio" name="unit" value="kg" required><span>কেজি</span></label>
+            <label class="pill"><input type="radio" name="unit" value="bag" required><span>বস্তা</span></label>
+          </div>
+        </div>
+        <label class="f"><span data-fqlabel>পরিমাণ</span><input name="qty" type="number" min="0" step="any" required inputmode="decimal"></label>
+        <label class="f">এক বস্তায় কত কেজি<input name="bagKg" type="number" min="0" step="any" inputmode="decimal" placeholder="বস্তা বেছে নিলে লাগবে"></label>
+        <label class="f full">মোট দাম (৳, শুধু কেনার সময়)<input name="price" type="number" min="0" step="any" inputmode="decimal"></label>
+        <div class="full preview">
+          <div class="calc" data-fcalc>কেজি না বস্তা, আগে বেছে নিন</div>
+          <div class="amt" data-famt>—</div>
+        </div>
         <div class="full"><button class="btn" type="submit">সেভ করুন</button></div>
       </form>
     </section>
@@ -396,7 +742,9 @@ const VIEWS = {
       ${db.feed.length ? `<div class="list">${[...db.feed].reverse().map((f) => `
         <div class="item">
           <div class="main">
-            <b>${f.type === 'in' ? 'কেনা' : 'ব্যবহার'} · ${bn(f.kg)} কেজি</b>
+            <b>${f.type === 'in' ? 'কেনা' : 'ব্যবহার'} · ${f.unit === 'bag'
+              ? bn(f.qty) + ' বস্তা (' + bn(f.kg) + ' কেজি)'
+              : bn(f.kg) + ' কেজি'}</b>
             <div class="meta">${f.date}${f.type === 'in' && f.price ? ' · ' + money(f.price) : ''}</div>
           </div>
           ${delBtn('feed', f.id)}
@@ -469,12 +817,15 @@ const VIEWS = {
   overview() {
     const t = totals();
     return `
+    <div class="ov-top">
+    <button class="tile prog-tile" data-go="progress" type="button"><span class="art">${PROG_SVG}</span><span class="t">প্রগ্রেস</span></button>
     <section class="card summary">
       ${stat('মোট পুকুর', bn(t.ponds) + ' টি')}
       ${stat('মোট মাছ', bn(t.fishNow))}
       ${stat('খাবার মজুদ', bn(t.feedStock) + ' কেজি')}
       ${stat('বর্তমান লাভ', money(t.profit))}
     </section>
+    </div>
     <section class="card section">
       <h2 class="sec">পুকুরভিত্তিক সারসংক্ষেপ</h2>
       ${db.ponds.length ? `<div class="scroll"><table class="tbl">
@@ -492,7 +843,92 @@ const VIEWS = {
         }).join('')}
       </table></div>` : '<div class="empty">প্রথমে পুকুর যোগ করুন।</div>'}
       <div class="no-print" style="margin-top:14px"><button class="btn ghost" data-action="print" type="button">রিপোর্ট প্রিন্ট বা PDF</button></div>
+    </section>
+`;
+  },
+
+  progress() {
+    const t = totals();
+    const s = progStats();
+    const b = periodBuckets();
+    const max = Math.max(1, ...b.map((x) => x.value));
+    const expPct = s.revenue > 0 ? Math.min(100, Math.max(0, Math.round(s.expenses / s.revenue * 100))) : 0;
+    const profitPct = Math.max(0, 100 - expPct);
+    const ringIncome = s.revenue > 0
+      ? `background: conic-gradient(#2e9d5a 0 ${profitPct}%, #f29b2c ${profitPct}% 100%);`
+      : 'background: #e5ece7;';
+    return `
+    <section class="card prog-head">
+      <div class="ph-left"><span class="ph-ic">${PROG_SVG}</span><div><h2>প্রগ্রেস</h2><small>মাছ বিক্রয় ও লাভের অগ্রগতি</small></div></div>
+      <div class="seg">${['week', 'month', 'year'].map((p) =>
+        `<button data-prog="${p}" class="${prog.period === p ? 'on' : ''}" type="button">${PLBL[p]}</button>`).join('')}</div>
+    </section>
+
+    <section class="card datenav">
+      <button data-nav="-1" type="button" aria-label="আগে">‹</button>
+      <span>${periodLabel()}</span>
+      <button data-nav="1" type="button" aria-label="পরে">›</button>
+    </section>
+
+    <section class="card donut-card">
+      <div class="ring" style="--p:${s.pct}%"><div class="ring-in"><b>${bn(s.pieces)}</b><small>টি বিক্রি</small></div></div>
+      <div class="donut-info"><small>মাছ বিক্রয় (পিস)</small><b>${bn(s.pieces)} টি</b><small>লক্ষ্য: ${bn(s.stocked)} টি মজুদ</small></div>
+      <span class="badge-pct">${bn(s.pct)}%<small>সম্পূর্ণ</small></span>
+    </section>
+
+    <div class="mini4">
+      <div class="mini"><img src="${IMG.chart}" alt=""><small>প্রতিদিন গড় বিক্রয়</small><b>${money(s.avg)}</b></div>
+      <div class="mini"><img src="${IMG.fish}" alt=""><small>জীবিত মাছ (এখন)</small><b>${bn(t.fishNow)} টি</b></div>
+      <div class="mini"><img src="${IMG.tMed}" alt=""><small>মৃত মাছ</small><b>${bn(s.dead)} টি</b></div>
+      <div class="mini"><img src="${IMG.sack}" alt=""><small>খাবার ব্যবহার</small><b>${bn(s.feedKg)} কেজি</b></div>
+    </div>
+
+    <section class="card section">
+      <h2 class="sec">${barsTitle()}</h2>
+      <div class="bars">${b.map((x) => `
+        <div class="bar-col">
+          <em>${x.value ? shortNum(x.value) : ''}</em>
+          <div class="bar-track"><div class="bar-fill" style="height:${x.value ? Math.max(3, x.value / max * 100) : 0}%"></div></div>
+          <span>${x.label}</span>
+        </div>`).join('')}</div>
+    </section>
+
+    <section class="card section">
+      <h2 class="sec">আয় ও খরচ</h2>
+      <div class="fin-row">
+        <div class="ring2" style="${ringIncome}"><div class="ring-in"><small>লাভ</small><b>${bn(s.margin)}%</b></div></div>
+        <div style="flex:1;min-width:200px">
+          <div class="lrow"><span><span class="dot" style="background:#2e9d5a"></span>মোট আয়</span><b>${money(s.revenue)}</b></div>
+          <div class="lrow"><span><span class="dot" style="background:#f29b2c"></span>মোট খরচ</span><b>${money(s.expenses)}</b></div>
+          <div class="lrow"><span><span class="dot" style="background:#1f5fbf"></span>লাভ</span><b>${money(s.profit)}</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card section">
+      <h2 class="sec">এই সময়ের সারসংক্ষেপ</h2>
+      <div class="lrow"><span>মোট মাছ বিক্রয় (পিস)</span><b>${bn(s.pieces)} টি</b></div>
+      <div class="lrow"><span>মোট মাছ বিক্রয় (কেজি)</span><b>${bn(s.kg)} কেজি</b></div>
+      <div class="lrow"><span>মোট মৃত মাছ</span><b>${bn(s.dead)} টি</b></div>
+      <div class="lrow"><span>মোট খাবার ব্যবহার</span><b>${bn(s.feedKg)} কেজি</b></div>
+    </section>
+
+    <p class="tagline">স্মার্ট ব্যবস্থাপনায় লাভজনক মাছ চাষ | আপনার সফলতা আমাদের লক্ষ্য</p>`;
+  },
+
+  calc() {
+    return `
+    <section class="card">
+      <h2 class="sec">ক্যালকুলেটর</h2>
+      <div class="calc-disp" id="calc-disp">${toBn(calc.disp)}</div>
+      ${calcHtml()}
+      <h3 class="sub-h">পিস থেকে কেজি ও টাকার দ্রুত হিসাব</h3>
+      ${helperHtml()}
+      <p class="note">এই হিসাব সেভ হয় না। বিক্রয় সেভ করতে "আর্থিক হিসাব" পাতা ব্যবহার করুন।</p>
     </section>`;
+  },
+  notes() {
+    return notesHtml();
   },
 
   finance() {
@@ -567,6 +1003,43 @@ function updateSale(form) {
   form.querySelector('[data-amt]').textContent = money(qty * unit);
 }
 
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 1800);
+}
+
+function updateStock(form) {
+  if (!form) return;
+  const unit = form.querySelector('input[name="unit"]:checked').value;
+  const basis = form.querySelector('input[name="basis"]:checked').value;
+  form.querySelector('[data-sqlabel]').textContent = unit === 'piece' ? 'মাছের সংখ্যা (পিস)' : 'মোট ওজন (কেজি)';
+  form.querySelector('[data-spbasis]').textContent = basis === 'piece' ? 'প্রতি পিস দাম (৳)' : 'প্রতি কেজি দাম (৳)';
+  const qty = Number(form.qty.value) || 0;
+  const avg = Number(form.avgKg.value) || 0;
+  const price = Number(form.price.value) || 0;
+  const count = unit === 'piece' ? qty : (avg > 0 ? Math.round(qty / avg) : 0);
+  const kg = unit === 'piece' ? qty * avg : qty;
+  const value = basis === 'piece' ? count * price : kg * price;
+  form.querySelector('[data-spcalc]').textContent = `${bn(count)} পিস · ${bn(kg)} কেজি`;
+  form.querySelector('[data-spamt]').textContent = money(value);
+}
+function updateFeed(form) {
+  if (!form) return;
+  const picked = form.querySelector('input[name="unit"]:checked');
+  const unit = picked ? picked.value : '';
+  const qty = Number(form.qty.value) || 0;
+  const bag = Number(form.bagKg.value) || 0;
+  const kg = unit === 'bag' ? qty * bag : qty;
+  form.querySelector('[data-fqlabel]').textContent = unit === 'bag' ? 'বস্তার সংখ্যা' : unit === 'kg' ? 'কেজির পরিমাণ' : 'পরিমাণ';
+  form.querySelector('[data-fcalc]').textContent = !unit
+    ? 'কেজি না বস্তা, আগে বেছে নিন'
+    : unit === 'bag' ? `${bn(qty)} বস্তা × ${bn(bag)} কেজি = ` : `${bn(qty)} কেজি`;
+  form.querySelector('[data-famt]').textContent = unit ? `${bn(kg)} কেজি` : '—';
+}
+
 // ---------- ফর্ম সেভ ----------
 const HANDLERS = {
   pond(d) {
@@ -574,13 +1047,21 @@ const HANDLERS = {
     db.ponds.push({ id: uid(), name: d.name.trim(), area: Number(d.area) || 0, depth: Number(d.depth) || 0, date: d.date || today() });
   },
   stock(d) {
-    if (!d.pondId || !(Number(d.count) >= 0)) return false;
-    db.stocks.push({ id: uid(), pondId: d.pondId, species: (d.species || '').trim(), count: Number(d.count) || 0, avgKg: Number(d.avgKg) || 0, date: d.date || today() });
+    const avg = Number(d.avgKg), qty = Number(d.qty), price = Number(d.price) || 0;
+    if (!d.pondId || !(avg > 0) || !(qty > 0)) return false;
+    const count = d.unit === 'piece' ? qty : Math.round(qty / avg);
+    const kg = d.unit === 'piece' ? qty * avg : qty;
+    const value = d.basis === 'piece' ? count * price : kg * price;
+    db.stocks.push({ id: uid(), pondId: d.pondId, species: (d.species || '').trim(), unit: d.unit, qty, avgKg: avg,
+      count, kg, basis: d.basis, price, value, date: d.date || today() });
   },
   feed(d) {
-    const kg = Number(d.kg);
-    if (!(kg > 0)) return false;
-    db.feed.push({ id: uid(), type: d.type, kg, price: d.type === 'in' ? (Number(d.price) || 0) : 0, date: d.date || today() });
+    const qty = Number(d.qty), bag = Number(d.bagKg) || 0;
+    if (!d.unit || !(qty > 0)) return false;
+    if (d.unit === 'bag' && !(bag > 0)) return false;
+    const kg = d.unit === 'bag' ? qty * bag : qty;
+    db.feed.push({ id: uid(), type: d.type, unit: d.unit, qty, bagKg: d.unit === 'bag' ? bag : 0, kg,
+      price: d.type === 'in' ? (Number(d.price) || 0) : 0, date: d.date || today() });
   },
   water(d) {
     if (!d.pondId) return false;
@@ -596,13 +1077,17 @@ const HANDLERS = {
     if (!d.pondId || !(qty > 0) || !(unit >= 0)) return false;
     db.sales.push({ id: uid(), pondId: d.pondId, mode: d.mode, qty, unit, total: qty * unit, date: d.date || today() });
   },
+  note(d) {
+    if (!(d.text || '').trim()) return false;
+    db.notes.push({ id: uid(), title: (d.title || '').trim(), text: d.text.trim(), date: d.date || today() });
+  },
   expense(d) {
     const amount = Number(d.amount);
     if (!(amount > 0)) return false;
     db.expenses.push({ id: uid(), item: (d.item || '').trim(), amount, date: d.date || today() });
   },
 };
-const LISTS = { stock: 'stocks', feed: 'feed', health: 'health', water: 'water', sale: 'sales', expense: 'expenses' };
+const LISTS = { stock: 'stocks', feed: 'feed', health: 'health', water: 'water', sale: 'sales', expense: 'expenses', note: 'notes' };
 
 function removeItem(kind, id) {
   if (kind === 'pond') {
@@ -628,6 +1113,8 @@ function render() {
   backBtn.hidden = view === 'home';
   app.innerHTML = VIEWS[view]();
   if (view === 'finance') updateSale(app.querySelector('form[data-form="sale"]'));
+  if (view === 'fish') updateStock(app.querySelector('form[data-form="stock"]'));
+  if (view === 'feed') updateFeed(app.querySelector('form[data-form="feed"]'));
 }
 function go(name) {
   view = name in VIEWS ? name : 'home';
@@ -638,6 +1125,11 @@ backBtn.addEventListener('click', () => go('home'));
 
 document.addEventListener('click', (e) => {
   const goEl = e.target.closest('[data-go]');
+  if (goEl && goEl.classList.contains('tile')) {
+    goEl.classList.add('pressed');
+    const target = goEl.dataset.go;
+    return setTimeout(() => go(target), 170);
+  }
   if (goEl) return go(goEl.dataset.go);
 
   const del = e.target.closest('[data-del]');
@@ -649,7 +1141,14 @@ document.addEventListener('click', (e) => {
     removeItem(del.dataset.del, del.dataset.id);
     return render();
   }
+  const pb = e.target.closest('[data-prog]');
+  if (pb) { prog.period = pb.dataset.prog; return render(); }
+  const nb = e.target.closest('[data-nav]');
+  if (nb) { shiftPeriod(Number(nb.dataset.nav)); return render(); }
+  const ck = e.target.closest('[data-calc]');
+  if (ck) return calcKey(ck.dataset.calc);
   if (e.target.closest('[data-action="print"]')) window.print();
+  if (e.target.closest('[data-action="ai"]')) showToast('AI সহকারী শীঘ্রই আসছে');
 });
 
 document.addEventListener('submit', (e) => {
@@ -662,12 +1161,20 @@ document.addEventListener('submit', (e) => {
   render();
 });
 document.addEventListener('input', (e) => {
-  const form = e.target.closest('form[data-form="sale"]');
-  if (form) updateSale(form);
+  const form = e.target.closest('form[data-form]');
+  if (form) refreshPreview(form);
+  updateHelper(e.target.closest('[data-helper]'));
 });
 document.addEventListener('change', (e) => {
-  if (e.target.name === 'mode') updateSale(e.target.closest('form'));
+  const form = e.target.closest('form[data-form]');
+  if (form) refreshPreview(form);
 });
+function refreshPreview(form) {
+  const name = form.dataset.form;
+  if (name === 'sale') updateSale(form);
+  if (name === 'stock') updateStock(form);
+  if (name === 'feed') updateFeed(form);
+}
 
 render();
 </script>
