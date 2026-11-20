@@ -371,6 +371,7 @@
         function loadSession() { try { return JSON.parse(localStorage.getItem('farmSession') || 'null'); } catch (e) { return null; } }
 
         let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null;
+        const canSeeAllFb = () => ME.id === primaryOwnerEmail || ((typeof TEAM !== 'undefined' && TEAM && TEAM.ownerList) || []).some(x => x.email === ME.id);
         const fbRows = (list, showBy) => list.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(r.by || '') + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>').join('');
         const FB_LABEL = { problem: 'সমস্যা', suggest: 'পরামর্শ', question: 'প্রশ্ন' };
         const DEVICE_ID = (() => { let d = null; try { d = localStorage.getItem('deviceId'); } catch (e) {} if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('deviceId', d); } catch (e) {} } return d; })();
@@ -1521,7 +1522,7 @@
                     + '<section><h2>থিম</h2><div class="setrow"><button data-a="settheme" data-i="dark"' + (document.getElementById('app-screen').getAttribute('data-theme') === 'dark' ? ' class="on"' : '') + '>কালো</button><button data-a="settheme" data-i="light"' + (document.getElementById('app-screen').getAttribute('data-theme') !== 'dark' ? ' class="on"' : '') + '>সাদা</button></div></section>'
                     + '<section><h2>মতামত</h2><div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
                     + '<label>লিখুন<textarea id="fbt" rows="4"></textarea></label><button class="p" data-a="sendfb">পাঠান</button>'
-                    + (isOwner() ? '<button class="p" data-a="fbload" style="margin-top:8px">সব মতামত দেখুন</button>' + (FB_ROWS ? fbRows(FB_ROWS, true) || '<div class="mu">এখনো কোনো মতামত নেই।</div>' : '') : '<button class="p" data-a="fbmine" style="margin-top:8px">আমার মতামতগুলো দেখুন</button>' + (FB_MINE ? fbRows(FB_MINE, false) || '<div class="mu">আপনার কোনো মতামত নেই।</div>' : ''))
+                    + (canSeeAllFb() ? '<button class="p" data-a="fbload" style="margin-top:8px">সব মতামত দেখুন</button>' + (FB_ROWS ? fbRows(FB_ROWS, true) || '<div class="mu">এখনো কোনো মতামত নেই।</div>' : '') : '<button class="p" data-a="fbmine" style="margin-top:8px">আমার মতামতগুলো দেখুন</button>' + (FB_MINE ? fbRows(FB_MINE, false) || '<div class="mu">আপনার কোনো মতামত নেই।</div>' : ''))
                     + '</section>'
                     + (isOwner() ? '<section><h2>রিসেট</h2><button class="s d" data-a="resetfarm">সব হিসাব রিসেট করুন</button></section>' : '');
             },
@@ -1950,7 +1951,7 @@
             const f = F;
             const need = (c, m) => { if (!c) { alert(m); return true; } return false; };
             const done = (m) => { showToast(m || "সেভ হয়েছে!"); render(false); };
-            if (!f && !['addowner', 'addstaff', 'delowner', 'delstaff', 'cl', 'pg', 'pnav', 'saveprof', 'setlang', 'delphoto', 'tksave', 'tkdrop', 'tkdel', 'tkdone', 'tkundo', 'notifon', 'notiftest'].includes(a)) return;
+            if (!f && !['addowner', 'addstaff', 'delowner', 'delstaff', 'cl', 'pg', 'pnav', 'saveprof', 'setlang', 'delphoto', 'tksave', 'tkdrop', 'tkdel', 'tkdone', 'tkundo', 'notifon', 'notiftest', 'fbtype', 'sendfb', 'fbmine', 'fbload'].includes(a)) return;
 
             el.disabled = true;
             try {
@@ -2150,11 +2151,11 @@
                     render(true);
                 }
                 else if (a === 'fbload') {
-                    if (!isOwner()) return;
+                    if (!canSeeAllFb()) return;
                     try {
                         const snap = await withTO(getDocs(query(collection(db, 'feedback'), orderBy('ts', 'desc'))));
                         FB_ROWS = snap.docs.map(d => d.data());
-                    } catch (err) { showToast('মতামত আনা যায়নি', 'error'); }
+                    } catch (err) { showToast('শুধু মালিকরা সব মতামত দেখতে পারবেন', 'error'); }
                     render(true);
                 }
                 else if (a === 'settheme') {
