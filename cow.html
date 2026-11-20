@@ -296,9 +296,10 @@ function load() {
     return Object.assign(base, saved, { settings: Object.assign(base.settings, saved.settings || {}) });
   } catch (e) { return empty(); }
 }
-function save() { if (!READY) return; window.parent.postMessage({ type: 'farmsave', ft: FARM_FT, data: JSON.parse(JSON.stringify(db)) }, '*'); }
+function save() { if (!READY) return; window.parent.postMessage({ type: 'farmsave', ft: FARM_FT, key: FARM_KEY, data: JSON.parse(JSON.stringify(db)) }, '*'); }
 // ---------- অ্যাপের সাথে ডেটা সিঙ্ক (Firebase, Gmail অ্যাকাউন্টে) ----------
 const FARM_FT = 'cow';
+const FARM_KEY = new URLSearchParams(location.search).get('fid') || FARM_FT;
 let READY = false;
 function isEmptyData(d) { return !d || Object.keys(d).every(k => !Array.isArray(d[k]) || d[k].length === 0); }
 const LEGACY_LOCAL = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch (e) { return null; } })();
@@ -316,7 +317,7 @@ window.addEventListener('message', (e) => {
   }
   try { render(); } catch (err) {}
 });
-window.parent.postMessage({ type: 'farmready', ft: FARM_FT }, '*');
+window.parent.postMessage({ type: 'farmready', ft: FARM_FT, key: FARM_KEY }, '*');
 
 // ---------- সাহায্যকারী ----------
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);

@@ -301,6 +301,7 @@
                 <button class="logout" onclick="logout()" aria-label="লগআউট"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3.5H6.2A2.7 2.7 0 0 0 3.5 6.2v11.6a2.7 2.7 0 0 0 2.7 2.7h3.3M15 8l4 4-4 4M19 12H9.5"/></svg><span>লগআউট</span></button>
             </div>
             <header><select id="farm" aria-label="খামার বদলান"></select><button id="rn">নাম বদলান</button><button id="nf">+ নতুন খামার</button></header>
+             <div id="farmbar" style="display:none;"></div>
             <nav id="nav"></nav>
             <div id="strip"></div>
             <div id="v"></div>
@@ -560,7 +561,7 @@
             if (!d || typeof d !== 'object' || !['fish', 'broiler', 'cow'].includes(d.ft)) return;
             const frame = document.getElementById('farm-frame');
             if (!frame || !frame.contentWindow || frame.contentWindow !== e.source) return;
-            const ref = docx('farmtypes', d.ft);
+            const ref = docx('farmtypes', d.key || d.ft);
             if (d.type === 'farmready') {
                 try {
                     const snap = await withTO(getDoc(ref), 6000);
@@ -572,7 +573,60 @@
                 setDoc(ref, d.data).catch(err => showToast('সেভ হয়নি: ' + err.message, 'error'));
             }
         });
-        function openFarmFile(file, title) {
+        const SHORT_NAME = { layer: 'লেয়ার', broiler: 'ব্রয়লার', cow: 'গরু', fish: 'মাছ' };
+        function renderFarmBar() {
+            const bar = document.getElementById('farmbar');
+            if (!bar) return;
+            if (!isOwner()) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+            bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 10px;';
+            bar.innerHTML = FARM_CARDS.map(c => '<button data-nfty="' + c.k + '" style="background:#fff;border:1px solid #d6ddd1;border-radius:14px;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:70px;">'
+                + '<img src="' + CHOOSER_PHOTOS[c.k] + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;">'
+                + '<span style="font-size:.8rem;color:#1c2a21;">+ ' + SHORT_NAME[c.k] + '</span></button>').join('')
+                + '<button id="fl" style="margin-left:auto;background:#2d6a3e;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;">খামার সমূহ</button>';
+        }
+        function selectFarm(id) {
+            const f = FARMS.find(x => x.id === id);
+            if (!f) return;
+            const t = f.type || 'layer';
+            if (t === 'layer') { CUR = id; attachFarm(); render(false); return; }
+            const c = FARM_CARDS.find(x => x.k === t);
+            if (c && c.file) openFarmFile(c.file, f.name || c.t, id);
+        }
+        function openFarmList() {
+            const old = document.getElementById('farm-list'); if (old) old.remove();
+            const o = document.createElement('div');
+            o.id = 'farm-list';
+            o.style.cssText = 'position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
+            const rows = FARMS.map(f => {
+                const t = f.type || 'layer';
+                const c = FARM_CARDS.find(x => x.k === t);
+                return '<button data-fl="' + f.id + '" style="display:flex;align-items:center;gap:12px;width:100%;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;margin-top:8px;text-align:left;cursor:pointer;">'
+                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">'
+                    + '<span><b style="display:block;color:#1c2a21;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>';
+            }).join('');
+            o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:16px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-sizing:border-box;">'
+                + '<div style="font-weight:700;font-size:1.1rem;">খামার সমূহ</div>'
+                + (rows || '<div style="margin-top:10px;color:#455549;">এখনো কোনো খামার নেই।</div>')
+                + '<button id="fl-close" style="margin-top:12px;width:100%;background:#eef2ec;color:#1c2a21;border:0;border-radius:10px;padding:10px;font-weight:700;">বন্ধ করুন</button>'
+                + '</div>';
+            document.body.appendChild(o);
+            o.addEventListener('click', (e) => {
+                if (e.target.id === 'fl-close' || e.target === o) { o.remove(); return; }
+                const b = e.target.closest('[data-fl]');
+                if (b) { const id = b.getAttribute('data-fl'); o.remove(); selectFarm(id); }
+            });
+        }
+        document.addEventListener('click', (e) => {
+            const nb = e.target.closest && e.target.closest('[data-nfty]');
+            if (nb && isOwner()) {
+                const c = FARM_CARDS.find(x => x.k === nb.getAttribute('data-nfty'));
+                if (c) createFarmFlow(c, () => {});
+                return;
+            }
+            if (e.target.closest && e.target.closest('#fl')) openFarmList();
+        });
+
+        function openFarmFile(file, title, fid) {
             const old = document.getElementById('farm-view'); if (old) old.remove();
             const v = document.createElement('div');
             v.id = 'farm-view';
@@ -580,11 +634,45 @@
             v.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#2d6a3e;color:#fff;font-family:\'Noto Sans Bengali\',\'Hind Siliguri\',sans-serif;">'
                 + '<button id="farm-view-back" style="background:#fff;color:#2d6a3e;border:0;border-radius:10px;padding:6px 12px;font-weight:700;cursor:pointer;">← ফিরে যান</button>'
                 + '<span style="font-weight:700;">' + title + '</span></div>'
-                + '<iframe id="farm-frame" src="' + file + '" title="' + title + '" style="flex:1;width:100%;border:0;"></iframe>';
+                + '<iframe id="farm-frame" src="' + file + (fid ? '?fid=' + encodeURIComponent(fid) : '') + '" title="' + title + '" style="flex:1;width:100%;border:0;"></iframe>';
             document.body.appendChild(v);
             document.getElementById('farm-view-back').addEventListener('click', () => v.remove());
         }
-        function showFarmChooser(onPick) {
+        function askText(title) {
+            return new Promise((resolve) => {
+                const o = document.createElement('div');
+                o.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
+                o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:18px;width:100%;max-width:360px;box-sizing:border-box;">'
+                    + '<div style="font-weight:700;font-size:1.05rem;margin-bottom:10px;">' + title + '</div>'
+                    + '<input id="at-in" style="width:100%;box-sizing:border-box;padding:10px;border:1px solid #d6ddd1;border-radius:10px;font-size:1rem;">'
+                    + '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px;">'
+                    + '<button id="at-no" style="background:#eef2ec;color:#1c2a21;border:0;border-radius:10px;padding:9px 16px;font-weight:700;">বাতিল</button>'
+                    + '<button id="at-ok" style="background:#2d6a3e;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;">ঠিক আছে</button>'
+                    + '</div></div>';
+                document.body.appendChild(o);
+                const inp = o.querySelector('#at-in');
+                inp.focus();
+                const done = (v) => { o.remove(); resolve(v); };
+                o.querySelector('#at-no').addEventListener('click', () => done(null));
+                o.querySelector('#at-ok').addEventListener('click', () => done(inp.value.trim() || null));
+                inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(inp.value.trim() || null); });
+            });
+        }
+        async function createFarmFlow(c, reopen) {
+            const name = await askText('নতুন খামারের নাম');
+            if (!name) { reopen(); return; }
+            try {
+                const r = doc(colx('farms'));
+                if (c.k === 'layer') {
+                    await setDoc(r, { name, ts: Date.now(), type: 'layer' });
+                    CUR = r.id; attachFarm(); render(false);
+                } else {
+                    await setDoc(r, { name, ts: Date.now(), type: c.k });
+                    openFarmFile(c.file, name, r.id);
+                }
+            } catch (err) { showToast('সমস্যা হয়েছে: ' + err.message, 'error'); }
+        }
+        function showFarmChooser(onPick, newFarmMode) {
             const old = document.getElementById('farm-chooser'); if (old) old.remove();
             const wrap = document.createElement('div');
             wrap.id = 'farm-chooser';
@@ -603,11 +691,19 @@
                 const card = e.target.closest('[data-fc]');
                 if (!card) return;
                 const c = FARM_CARDS.find(x => x.k === card.getAttribute('data-fc'));
+                if (newFarmMode) { wrap.remove(); createFarmFlow(c, () => showFarmChooser(onPick, true)); return; }
                 if (c.file) { openFarmFile(c.file, c.t); return; }
                 try { localStorage.setItem('chooserDone:' + (auth.currentUser ? auth.currentUser.uid : ''), '1'); } catch (err) {}
                 wrap.remove();
                 onPick();
             });
+            if (newFarmMode) {
+                const x = document.createElement('button');
+                x.textContent = 'বন্ধ করুন';
+                x.style.cssText = 'display:block;margin:18px auto 0;background:#eef2ec;color:#1c2a21;border:0;border-radius:10px;padding:10px 20px;font-weight:700;';
+                x.addEventListener('click', () => wrap.remove());
+                wrap.appendChild(x);
+            }
             document.body.appendChild(wrap);
         }
 
@@ -617,6 +713,7 @@
             startSessionGuard(_fresh);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.remove('hidden');
+            renderFarmBar();
             ME.base = name; PROF = null; updateHeader();
             unsubs.push(onSnapshot(doc(db, 'profiles', ME.uid), (snap) => {
                 PROF = snap.exists() ? snap.data() : null;
@@ -2133,7 +2230,7 @@
             if (e.target.id === 'ym') { YM = e.target.value; render(false); }
             if (e.target.id === 'pm') { PM = e.target.value || null; render(false); }
             if (e.target.id === 'py' && /^\d{4}$/.test(e.target.value)) { PY = e.target.value; render(false); }
-            if (e.target.id === 'farm') { CUR = e.target.value; attachFarm(); render(false); }
+            if (e.target.id === 'farm') { selectFarm(e.target.value); }
         });
 
         $('rn').onclick = async () => {
@@ -2141,16 +2238,7 @@
             const n = prompt('খামারের নতুন নাম', cf.name);
             if (n && n.trim()) { try { await updateDoc(docx('farms', CUR), { name: n.trim() }); } catch (err) { showToast("সমস্যা হয়েছে: " + err.message, "error"); } }
         };
-        $('nf').onclick = async () => {
-            const n = prompt('নতুন খামারের নাম');
-            if (n && n.trim()) {
-                try {
-                    const r = doc(colx('farms'));
-                    await setDoc(r, { name: n.trim(), ts: Date.now() });
-                    CUR = r.id; attachFarm(); render(false);
-                } catch (err) { showToast("সমস্যা হয়েছে: " + err.message, "error"); }
-            }
-        };
+        $('nf').onclick = () => showFarmChooser(null, true);
     </script>
 </body>
 </html>
