@@ -626,9 +626,12 @@
             const rows = FARMS.map(f => {
                 const t = f.type || 'layer';
                 const c = FARM_CARDS.find(x => x.k === t);
-                return '<button data-fl="' + f.id + '" style="display:flex;align-items:center;gap:12px;width:100%;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;margin-top:8px;text-align:left;cursor:pointer;">'
-                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">'
-                    + '<span><b style="display:block;color:#1c2a21;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>';
+                return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">'
+                    + '<button data-fl="' + f.id + '" style="flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;text-align:left;cursor:pointer;">'
+                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex:none;">'
+                    + '<span style="min-width:0;"><b style="display:block;color:#1c2a21;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>'
+                    + (isOwner() ? '<button data-fdel="' + f.id + '" aria-label="মুছুন" style="flex:none;background:#fff;color:#a63a2b;border:1px solid #e9c4bd;border-radius:12px;padding:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' : '')
+                    + '</div>';
             }).join('');
             o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:16px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-sizing:border-box;">'
                 + '<div style="font-weight:700;font-size:1.1rem;">খামার সমূহ</div>'
@@ -638,9 +641,41 @@
             document.body.appendChild(o);
             o.addEventListener('click', (e) => {
                 if (e.target.id === 'fl-close' || e.target === o) { o.remove(); return; }
+                const db2 = e.target.closest('[data-fdel]');
+                if (db2) { deleteFarm(db2.getAttribute('data-fdel')); return; }
                 const b = e.target.closest('[data-fl]');
                 if (b) { const id = b.getAttribute('data-fl'); o.remove(); selectFarm(id); }
             });
+        }
+        async function deleteFarm(id) {
+            if (!isOwner()) return;
+            const f = FARMS.find(x => x.id === id);
+            if (!f) return;
+            const ok = await askConfirm('"' + esc(f.name || '') + '" খামারটি ও এর সব হিসাব মুছে যাবে। এটি আর ফেরানো যাবে না।');
+            if (!ok) return;
+            try {
+                const t = f.type || 'layer';
+                const ov = document.getElementById('farm-view'); if (ov) ov.remove();
+                const fl = document.getElementById('farm-list'); if (fl) fl.remove();
+                if (t !== 'layer') {
+                    await deleteDoc(docx('farmtypes', id));
+                } else {
+                    for (const k of ['batches', 'feeds', 'buys', 'logs', 'fin', 'hsold', 'assistant']) {
+                        const snap = await getDocs(collection(db, ...BASE, 'farms', id, k));
+                        for (let st = 0; st < snap.docs.length; st += 400) {
+                            const wb = writeBatch(db);
+                            snap.docs.slice(st, st + 400).forEach(d => wb.delete(d.ref));
+                            await wb.commit();
+                        }
+                    }
+                }
+                await deleteDoc(docx('farms', id));
+                if (CUR === id) CUR = null;
+                if (window.ACTIVE_FARM && window.ACTIVE_FARM.fid === id) window.ACTIVE_FARM = null;
+                showToast('খামারটি মুছে ফেলা হয়েছে');
+            } catch (err) {
+                showToast('মুছতে সমস্যা হয়েছে: ' + err.message, 'error');
+            }
         }
         document.addEventListener('click', (e) => {
             const nb = e.target.closest && e.target.closest('[data-nfty]');
@@ -2194,7 +2229,8 @@
                         wb.set(doc(colx('tasks')), { title: t.title, time: t.time, date: t.daily ? '' : t.date, daily: !!t.daily, toKey: t.key, toName: p ? p.name : '', toKind: p ? p.kind : 'staff', by: ME.name, byUid: ME.uid, ts: Date.now(), lastDone: '' });
                         lines.push('• ' + (p ? p.name : '') + ': ' + fmt12(t.time) + ' — ' + t.title + (t.daily ? ' (প্রতিদিন)' : ' (' + dt(t.date) + ')'));
                     });
-                    await wb.commit();
+                    try { await wb.commit(); }
+                    catch (err) { showToast('কাজ সেভ হয়নি: ' + err.message, 'error'); return; }
                     const cnt = PENDING.length; PENDING = [];
                     if (CUR) await setDoc(doc(fcol('assistant')), { uid: ME.uid, q: 'কাজ সেভ', a: cnt + 'টি কাজ সেভ হয়েছে। ৫ মিনিট আগে শুধু সংশ্লিষ্ট ব্যক্তির ফোনে রিমাইন্ডার যাবে:\n' + lines.join('\n'), ts: Date.now() });
                     done(cnt + 'টি কাজ সেভ হয়েছে!');
