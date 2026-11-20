@@ -576,14 +576,9 @@
         });
         const SHORT_NAME = { layer: 'লেয়ার', broiler: 'ব্রয়লার', cow: 'গরু', fish: 'মাছ' };
         function renderFarmBar() {
+            // চার ধরনের কার্ড সরানো হয়েছে; নতুন খামার যোগ করা হয় "+ নতুন খামার" বোতাম থেকে
             const bar = document.getElementById('farmbar');
-            if (!bar) return;
-            if (!isOwner()) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
-            bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:6px 0 10px;';
-            bar.innerHTML = FARM_CARDS.map(c => '<button data-nfty="' + c.k + '" style="background:#fff;border:1px solid #d6ddd1;border-radius:14px;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:70px;">'
-                + '<img src="' + CHOOSER_PHOTOS[c.k] + '" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;">'
-                + '<span style="font-size:.8rem;color:#1c2a21;">+ ' + SHORT_NAME[c.k] + '</span></button>').join('')
-                + '<button id="fl" style="margin-left:auto;background:#2d6a3e;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;">খামার সমূহ</button>';
+            if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
         }
         function selectFarm(id) {
             const f = FARMS.find(x => x.id === id);
@@ -629,15 +624,41 @@
 
         function openFarmFile(file, title, fid) {
             const old = document.getElementById('farm-view'); if (old) old.remove();
+            const appEl = document.getElementById('app-screen') || document.body;
+            const topSrc = document.querySelector('#app-screen main > .top');
+            const farmSel = document.getElementById('farm');
+            const noIds = (h) => h.replace(/ id="[^"]*"/g, '');
             const v = document.createElement('div');
             v.id = 'farm-view';
-            v.style.cssText = 'position:fixed;inset:0;z-index:1000;background:#fff;display:flex;flex-direction:column;';
-            v.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#2d6a3e;color:#fff;font-family:\'Noto Sans Bengali\',\'Hind Siliguri\',sans-serif;">'
-                + '<button id="farm-view-back" style="background:#fff;color:#2d6a3e;border:0;border-radius:10px;padding:6px 12px;font-weight:700;cursor:pointer;">← ফিরে যান</button>'
-                + '<span style="font-weight:700;">' + title + '</span></div>'
+            v.style.cssText = 'position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;';
+            v.innerHTML = '<div style="padding:12px 14px 6px;max-width:760px;width:100%;box-sizing:border-box;margin:0 auto;">'
+                + (topSrc ? noIds(topSrc.outerHTML) : '')
+                + '<header><select data-farmsel aria-label="খামার বদলান">' + (farmSel ? farmSel.innerHTML : '') + '</select>'
+                + '<button data-proxy="rn">নাম বদলান</button><button data-proxy="nf">+ নতুন খামার</button></header></div>'
                 + '<iframe id="farm-frame" src="' + file + (fid ? '?fid=' + encodeURIComponent(fid) : '') + '" title="' + title + '" style="flex:1;width:100%;border:0;"></iframe>';
-            document.body.appendChild(v);
-            document.getElementById('farm-view-back').addEventListener('click', () => v.remove());
+            appEl.appendChild(v);
+            const sel = v.querySelector('select[data-farmsel]');
+            if (sel && fid) sel.value = fid;
+            // উপরের বাটনগুলো আসল বোতামের কাজই করে; আগে এই পাতা বন্ধ হবে
+            v.addEventListener('click', (e) => {
+                const t = e.target.closest && e.target.closest('[data-t],[data-proxy]');
+                if (!t) return;
+                v.remove();
+                if (t.dataset.t) {
+                    const orig = document.querySelector('#app-screen main [data-t="' + t.dataset.t + '"]');
+                    if (orig) orig.click();
+                } else {
+                    const b = document.getElementById(t.dataset.proxy);
+                    if (b) b.click();
+                }
+            });
+            v.addEventListener('change', (e) => {
+                if (e.target && e.target.matches && e.target.matches('select[data-farmsel]')) {
+                    const id = e.target.value;
+                    v.remove();
+                    selectFarm(id);
+                }
+            });
         }
         function askText(title) {
             return new Promise((resolve) => {
