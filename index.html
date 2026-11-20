@@ -370,7 +370,8 @@
         function saveSession(obj) { try { localStorage.setItem('farmSession', JSON.stringify(obj)); } catch (e) {} }
         function loadSession() { try { return JSON.parse(localStorage.getItem('farmSession') || 'null'); } catch (e) { return null; } }
 
-        let FBTYPE = 'problem', FB_ROWS = null;
+        let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null;
+        const fbRows = (list, showBy) => list.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(r.by || '') + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>').join('');
         const FB_LABEL = { problem: 'সমস্যা', suggest: 'পরামর্শ', question: 'প্রশ্ন' };
         const DEVICE_ID = (() => { let d = null; try { d = localStorage.getItem('deviceId'); } catch (e) {} if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('deviceId', d); } catch (e) {} } return d; })();
         let LOCKED = false;
@@ -1499,7 +1500,7 @@
                     + '<section><h2>থিম</h2><div class="setrow"><button data-a="settheme" data-i="dark"' + (document.getElementById('app-screen').getAttribute('data-theme') === 'dark' ? ' class="on"' : '') + '>কালো</button><button data-a="settheme" data-i="light"' + (document.getElementById('app-screen').getAttribute('data-theme') !== 'dark' ? ' class="on"' : '') + '>সাদা</button></div></section>'
                     + '<section><h2>মতামত</h2><div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
                     + '<label>লিখুন<textarea id="fbt" rows="4"></textarea></label><button class="p" data-a="sendfb">পাঠান</button>'
-                    + (isOwner() ? '<button class="p" data-a="fbload" style="margin-top:8px">মতামতগুলো দেখুন</button>' + (FB_ROWS ? FB_ROWS.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span><b>' + esc(r.by || '') + '</b></div><div class="mu">' + esc(r.text || '') + '</div>').join('') || '<div class="mu">এখনো কোনো মতামত নেই।</div>' : '') : '')
+                    + (isOwner() ? '<button class="p" data-a="fbload" style="margin-top:8px">সব মতামত দেখুন</button>' + (FB_ROWS ? fbRows(FB_ROWS, true) || '<div class="mu">এখনো কোনো মতামত নেই।</div>' : '') : '<button class="p" data-a="fbmine" style="margin-top:8px">আমার মতামতগুলো দেখুন</button>' + (FB_MINE ? fbRows(FB_MINE, false) || '<div class="mu">আপনার কোনো মতামত নেই।</div>' : ''))
                     + '</section>'
                     + (isOwner() ? '<section><h2>রিসেট</h2><button class="s d" data-a="resetfarm">সব হিসাব রিসেট করুন</button></section>' : '');
             },
@@ -2114,15 +2115,23 @@
                     const box = document.getElementById('fbt');
                     const txt = (box && box.value || '').trim();
                     if (!txt) { showToast('কিছু লিখে পাঠান', 'error'); return; }
-                    addDoc(colx('feedback'), { type: FBTYPE, text: txt, by: ME.name, role: ME.role, uid: ME.uid, ts: Date.now() })
+                    FB_MINE = null;
+                    addDoc(collection(db, 'feedback'), { type: FBTYPE, text: txt, by: ME.name, role: ME.role, uid: ME.uid, ts: Date.now() })
                         .catch(err => showToast('মতামত পাঠানো যায়নি: ' + err.message, 'error'));
                     if (box) box.value = '';
                     showToast(navigator.onLine ? 'মতামত পাঠানো হয়েছে, ধন্যবাদ' : 'ফোনে জমা হয়েছে, ইন্টারনেট এলে পাঠাবে');
                 }
+                else if (a === 'fbmine') {
+                    try {
+                        const snap = await withTO(getDocs(query(collection(db, 'feedback'), where('uid', '==', ME.uid))));
+                        FB_MINE = snap.docs.map(d => d.data()).sort((x, y) => (y.ts || 0) - (x.ts || 0));
+                    } catch (err) { showToast('মতামত আনা যায়নি', 'error'); }
+                    render(true);
+                }
                 else if (a === 'fbload') {
                     if (!isOwner()) return;
                     try {
-                        const snap = await withTO(getDocs(query(colx('feedback'), orderBy('ts', 'desc'))));
+                        const snap = await withTO(getDocs(query(collection(db, 'feedback'), orderBy('ts', 'desc'))));
                         FB_ROWS = snap.docs.map(d => d.data());
                     } catch (err) { showToast('মতামত আনা যায়নি', 'error'); }
                     render(true);
