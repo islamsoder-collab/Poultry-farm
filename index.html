@@ -373,19 +373,25 @@
         let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null, FB_ALL = false;
         const canSeeAllFb = () => ME.id === primaryOwnerEmail || ((typeof TEAM !== 'undefined' && TEAM && TEAM.ownerList) || []).some(x => x.email === ME.id);
         async function loadFb() {
-            FB_ALL = false;
-            if (canSeeAllFb()) {
-                try {
-                    const snap = await withTO(getDocs(query(collection(db, 'feedback'), orderBy('ts', 'desc'))));
-                    FB_ROWS = snap.docs.map(d => d.data());
+            const col = collection(db, 'feedback');
+            const byTs = (x, y) => (y.ts || 0) - (x.ts || 0);
+            FB_ALL = false; FB_MINE = null;
+            try {
+                if (ME.id === primaryOwnerEmail) {
+                    const snap = await withTO(getDocs(col));
+                    FB_ROWS = snap.docs.map((d) => d.data()).sort(byTs);
                     FB_ALL = true;
-                } catch (err) { FB_ALL = false; }
-            }
-            if (!FB_ALL) {
-                try {
-                    const snap = await withTO(getDocs(query(collection(db, 'feedback'), where('uid', '==', ME.uid))));
-                    FB_MINE = snap.docs.map(d => d.data()).sort((x, y) => (y.ts || 0) - (x.ts || 0));
-                } catch (err) { FB_MINE = []; }
+                } else {
+                    const [x, y] = await Promise.all([
+                        withTO(getDocs(query(col, where('authorUid', '==', ME.uid)))),
+                        withTO(getDocs(query(col, where('farmOwnerUid', '==', ME.uid))))
+                    ]);
+                    const m = new Map();
+                    [...x.docs, ...y.docs].forEach((d) => m.set(d.id, d.data()));
+                    FB_MINE = [...m.values()].sort(byTs);
+                }
+            } catch (err) {
+                if (ME.id === primaryOwnerEmail) FB_ROWS = []; else FB_MINE = [];
             }
             if (tab === 'feedback') render(true);
         }
@@ -1610,7 +1616,7 @@
                 return '<section><h2>অ্যাপ সম্পর্কে মতামত বা সমস্যা</h2>'
                     + '<div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
                     + '<label>লিখুন<textarea id="fbt" rows="4"></textarea></label><button class="p" data-a="sendfb">জমা দিন</button></section>'
-                    + '<section><h2>' + (all ? 'সব মতামত' : 'আজ পর্যন্ত আমার মতামত') + '</h2>'
+                    + '<section><h2>' + (all ? 'সব মতামত' : 'মতামত') + '</h2>'
                     + (list ? (fbRows(list, all) || '<div class="mu">এখনো কোনো মতামত নেই।</div>') : '<div class="mu">লোড হচ্ছে...</div>')
                     + '</section>';
             },
@@ -2219,11 +2225,25 @@
                     const txt = (box && box.value || '').trim();
                     if (!txt) { showToast('কিছু লিখে পাঠান', 'error'); return; }
                     FB_MINE = null;
-                    addDoc(collection(db, 'feedback'), { type: FBTYPE, text: txt, by: ME.name, role: ME.role, uid: ME.uid, ts: Date.now() })
-                        .then(() => loadFb())
-                        .catch(err => showToast('মতামত পাঠানো যায়নি: ' + err.message, 'error'));
-                    if (box) box.value = '';
-                    showToast(navigator.onLine ? 'মতামত পাঠানো হয়েছে, ধন্যবাদ' : 'ফোনে জমা হয়েছে, ইন্টারনেট এলে পাঠাবে');
+                    const fbBox = document.getElementById('fbt');
+                    const fbData = {
+                        type: FBTYPE, text: txt,
+                        authorUid: ME.uid, farmOwnerUid: farmUid(),
+                        authorName: ME.name || '', authorEmail: (auth.currentUser && auth.currentUser.email) || '',
+                        authorRole: ME.role, ts: Date.now()
+                    };
+                    const sendP = addDoc(collection(db, 'feedback'), fbData);
+                    if (!navigator.onLine) {
+                        sendP.catch(() => {});
+                        if (fbBox) fbBox.value = '';
+                        showToast('ফোনে জমা হয়েছে, ইন্টারনেট এলে পাঠাবে');
+                        return;
+                    }
+                    sendP.then(() => {
+                        if (fbBox) fbBox.value = '';
+                        showToast('মতামত পাঠানো হয়েছে, ধন্যবাদ');
+                        loadFb();
+                    }).catch((err) => showToast('মতামত পাঠানো যায়নি: ' + err.message, 'error'));
                 }
                 else if (a === 'fbmine') {
                     try {
