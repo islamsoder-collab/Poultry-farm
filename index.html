@@ -640,6 +640,50 @@
             if (e.target.closest && e.target.closest('#fl')) openFarmList();
         });
 
+        function showFarmProfilePanel() {
+            const appEl = document.getElementById('app-screen') || document.body;
+            const prev = document.getElementById('farm-profile-panel'); if (prev) prev.remove();
+            let body = '';
+            try { body = V.profile(F); } catch (err) { body = '<div style="padding:20px;">প্রোফাইল দেখানো যাচ্ছে না</div>'; }
+            const p = document.createElement('div');
+            p.id = 'farm-profile-panel';
+            p.style.cssText = 'position:fixed;inset:0;z-index:1200;background:var(--bg);overflow-y:auto;';
+            p.innerHTML = '<div style="max-width:760px;margin:0 auto;padding:12px 14px 60px;box-sizing:border-box;">'
+                + '<button id="fpp-back" style="background:#2d6a3e;color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:700;margin-bottom:12px;cursor:pointer;">← ফিরে যান</button>'
+                + '<div>' + body + '</div></div>';
+            appEl.appendChild(p);
+            p.querySelector('#fpp-back').addEventListener('click', () => p.remove());
+            // মেনুর বাটনে (সেটিংস, টিম, মতামত) গেলে প্যানেল বন্ধ হবে, পেজ খুলবে
+            p.addEventListener('click', (e) => {
+                const t = e.target.closest && e.target.closest('[data-t]');
+                if (t && t.getAttribute('data-t') !== 'profile') p.remove();
+            }, true);
+        }
+        window.addEventListener('message', (e) => {
+            const d = e.data;
+            if (!d || typeof d !== 'object' || !['hdrready', 'hdraction'].includes(d.type)) return;
+            const frame = document.getElementById('farm-frame');
+            if (!frame || frame.contentWindow !== e.source) return;
+            if (d.type === 'hdrready') {
+                const av = document.querySelector('#avatar img');
+                e.source.postMessage({
+                    type: 'hdrdata',
+                    name: (ME && ME.name) || '',
+                    roleLabel: isOwner() ? 'মালিক' : 'স্টাফ',
+                    photo: av ? av.src : '',
+                    farms: FARMS.map(f => ({ id: f.id, name: f.name || '', type: f.type || 'layer' })),
+                    current: window.OPEN_FARM_FID || null
+                }, '*');
+                return;
+            }
+            const act = d.action;
+            if (act === 'profile') { showFarmProfilePanel(); return; }
+            const old = document.getElementById('farm-view'); if (old) old.remove();
+            if (act === 'logout') { if (window.logout) window.logout(); }
+            else if (act === 'rename') { const b = document.getElementById('rn'); if (b) b.click(); }
+            else if (act === 'newfarm') { const b = document.getElementById('nf'); if (b) b.click(); }
+            else if (act === 'farm' && d.value) { selectFarm(d.value); }
+        });
         function openFarmFile(file, title, fid) {
             const old = document.getElementById('farm-view'); if (old) old.remove();
             const appEl = document.getElementById('app-screen') || document.body;
@@ -649,34 +693,9 @@
             const v = document.createElement('div');
             v.id = 'farm-view';
             v.style.cssText = 'position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;';
-            v.innerHTML = '<div style="padding:12px 14px 6px;max-width:760px;width:100%;box-sizing:border-box;margin:0 auto;">'
-                + (topSrc ? noIds(topSrc.outerHTML) : '')
-                + '<header><select data-farmsel aria-label="খামার বদলান">' + (farmSel ? farmSel.innerHTML : '') + '</select>'
-                + '<button data-proxy="rn">নাম বদলান</button><button data-proxy="nf">+ নতুন খামার</button></header></div>'
-                + '<iframe id="farm-frame" src="' + file + (fid ? '?fid=' + encodeURIComponent(fid) : '') + '" title="' + title + '" style="flex:1;width:100%;border:0;"></iframe>';
+            v.innerHTML = '<iframe id="farm-frame" src="' + file + (fid ? '?fid=' + encodeURIComponent(fid) : '') + '" title="' + title + '" style="flex:1;width:100%;border:0;"></iframe>';
+            window.OPEN_FARM_FID = fid || null;
             appEl.appendChild(v);
-            const sel = v.querySelector('select[data-farmsel]');
-            if (sel && fid) sel.value = fid;
-            // উপরের বাটনগুলো আসল বোতামের কাজই করে; আগে এই পাতা বন্ধ হবে
-            v.addEventListener('click', (e) => {
-                const t = e.target.closest && e.target.closest('[data-t],[data-proxy]');
-                if (!t) return;
-                v.remove();
-                if (t.dataset.t) {
-                    const orig = document.querySelector('#app-screen main [data-t="' + t.dataset.t + '"]');
-                    if (orig) orig.click();
-                } else {
-                    const b = document.getElementById(t.dataset.proxy);
-                    if (b) b.click();
-                }
-            });
-            v.addEventListener('change', (e) => {
-                if (e.target && e.target.matches && e.target.matches('select[data-farmsel]')) {
-                    const id = e.target.value;
-                    v.remove();
-                    selectFarm(id);
-                }
-            });
         }
         function askText(title) {
             return new Promise((resolve) => {

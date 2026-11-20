@@ -261,9 +261,38 @@
     body { background: #fff; }
     .card { box-shadow: none; }
   }
- </style>
+ 
+    /* উপরের বার (লেয়ারের মতো) */
+    #hdr-bar{max-width:760px;margin:0 auto;padding:12px 14px 0;box-sizing:border-box;}
+    #hdr-bar .hb-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#17402a,#2d6a3e);color:#fff;box-shadow:0 4px 14px rgba(23,64,42,.25);}
+    #hdr-bar .hb-prof{display:flex;align-items:center;gap:12px;background:none;border:0;color:#fff;padding:0;text-align:left;min-width:0;flex:1;cursor:pointer;font:inherit;}
+    #hdr-bar .hb-who{display:block;min-width:0;}
+    #hdr-bar .hb-who b{display:block;font-size:1.15rem;font-weight:600;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    #hdr-bar .hb-who small{display:inline-block;font-size:.85rem;background:rgba(255,255,255,.18);padding:0 10px;border-radius:10px;line-height:1.5;}
+    #hdr-bar .hb-logout{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4);padding:8px 12px;flex:none;border-radius:12px;cursor:pointer;font:inherit;}
+    #hdr-bar .hb-logout svg{width:18px;height:18px;}
+    #hdr-bar .hb-avatar{width:48px;height:48px;border-radius:50%;background:#e6f0e8;color:#17402a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.3rem;overflow:hidden;border:2px solid rgba(255,255,255,.9);flex:none;}
+    #hdr-bar .hb-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
+    #hdr-bar .hb-header{display:flex;gap:8px;margin-bottom:10px;}
+    #hdr-bar .hb-header select{flex:1;font-weight:700;padding:10px;border:1px solid #d6ddd1;border-radius:12px;background:#fff;font:inherit;min-width:0;}
+    #hdr-bar .hb-header button{background:#fff;border:1px solid #d6ddd1;border-radius:12px;padding:10px 12px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;}
+  </style>
 </head>
 <body>
+<div id="hdr-bar">
+  <div class="hb-top">
+    <button class="hb-prof" data-hb="profile" aria-label="আমার প্রোফাইল">
+      <span class="hb-avatar" id="hb-avatar"></span>
+      <span class="hb-who"><b id="hb-name"></b><small id="hb-role"></small></span>
+    </button>
+    <button class="hb-logout" data-hb="logout" aria-label="লগআউট"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3.5H6.2A2.7 2.7 0 0 0 3.5 6.2v11.6a2.7 2.7 0 0 0 2.7 2.7h3.3M15 8l4 4-4 4M19 12H9.5"/></svg><span>লগআউট</span></button>
+  </div>
+  <div class="hb-header">
+    <select id="hb-farm" aria-label="খামার বদলান"></select>
+    <button data-hb="rename">নাম বদলান</button>
+    <button data-hb="newfarm">+ নতুন খামার</button>
+  </div>
+</div>
 
 <header class="top">
   <button class="back" id="back" type="button" aria-label="পেছনে" hidden>‹</button>
@@ -1148,6 +1177,37 @@ document.addEventListener('click', (e) => {
     if (typeof showToast === 'function') showToast('শীঘ্রই আসছে');
   }
 }, true);
+
+    /* উপরের বার: মূল অ্যাপ থেকে তথ্য নেয়, বোতামের কাজ মূল অ্যাপে পাঠায় */
+    (function () {
+      const nameEl = document.getElementById('hb-name');
+      const roleEl = document.getElementById('hb-role');
+      const avEl = document.getElementById('hb-avatar');
+      const selEl = document.getElementById('hb-farm');
+      function fillBar(d) {
+        nameEl.textContent = d.name || '';
+        roleEl.textContent = d.roleLabel || '';
+        avEl.innerHTML = '';
+        if (d.photo) { const im = document.createElement('img'); im.src = d.photo; im.alt = ''; avEl.appendChild(im); }
+        else { avEl.textContent = (d.name || '?').trim().charAt(0); }
+        selEl.innerHTML = '';
+        (d.farms || []).forEach(f => {
+          const o = document.createElement('option');
+          o.value = f.id; o.textContent = f.name || '';
+          if (f.id === d.current) o.selected = true;
+          selEl.appendChild(o);
+        });
+      }
+      document.querySelectorAll('#hdr-bar [data-hb]').forEach(b => {
+        b.addEventListener('click', () => window.parent.postMessage({ type: 'hdraction', action: b.getAttribute('data-hb') }, '*'));
+      });
+      selEl.addEventListener('change', () => window.parent.postMessage({ type: 'hdraction', action: 'farm', value: selEl.value }, '*'));
+      window.addEventListener('message', (e) => {
+        if (e.source !== window.parent || !e.data || e.data.type !== 'hdrdata') return;
+        fillBar(e.data);
+      });
+      window.parent.postMessage({ type: 'hdrready' }, '*');
+    })();
 </script>
 </body>
 </html>
