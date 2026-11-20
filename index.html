@@ -606,6 +606,8 @@
             const f = FARMS.find(x => x.id === id);
             if (!f) return;
             const t = f.type || 'layer';
+            // যেকোনো খামার বাছলে আগের খামার পেজ (ওভারলে) বন্ধ হবে
+            const ov = document.getElementById('farm-view'); if (ov) ov.remove();
             if (t === 'layer') { CUR = id; attachFarm(); render(false); return; }
             const c = FARM_CARDS.find(x => x.k === t);
             if (c && c.file) openFarmFile(c.file, f.name || c.t, id);
