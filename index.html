@@ -300,8 +300,8 @@
                 </button>
                 <button class="logout" onclick="logout()" aria-label="লগআউট"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 3.5H6.2A2.7 2.7 0 0 0 3.5 6.2v11.6a2.7 2.7 0 0 0 2.7 2.7h3.3M15 8l4 4-4 4M19 12H9.5"/></svg><span>লগআউট</span></button>
             </div>
-            <header><select id="farm" aria-label="খামার বদলান"></select><button id="rn">নাম বদলান</button><button id="nf">+ নতুন খামার</button></header>
-             <div id="farmbar" style="display:none;"></div>
+            <header><select id="farm" aria-label="খামার বদলান"></select><button id="rn">নাম বদলান</button><button id="nf">+ নতুন খামার</button>
+             <div id="farmbar" style="display:none;"></div></header>
             <nav id="nav"></nav>
             <div id="strip"></div>
             <div id="v"></div>
@@ -594,9 +594,13 @@
         });
         const SHORT_NAME = { layer: 'লেয়ার', broiler: 'ব্রয়লার', cow: 'গরু', fish: 'মাছ' };
         function renderFarmBar() {
-            // চার ধরনের কার্ড সরানো হয়েছে; নতুন খামার যোগ করা হয় "+ নতুন খামার" বোতাম থেকে
+            // শুধু "খামার সমূহ" বোতাম; নতুন খামার যোগ করা হয় "+ নতুন খামার" বোতাম থেকে
             const bar = document.getElementById('farmbar');
-            if (bar) { bar.style.display = 'none'; bar.innerHTML = ''; }
+            if (!bar) return;
+            if (!isOwner()) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
+            bar.style.cssText = 'display:flex;justify-content:flex-end;flex-basis:100%;margin:0;';
+            bar.parentElement.style.flexWrap = 'wrap';
+            bar.innerHTML = '<button id="fl" style="background:#fff;color:#1c2a21;border:1px solid #d6ddd1;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:inherit;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>খামার সমূহ</span></button>';
         }
         function selectFarm(id) {
             const f = FARMS.find(x => x.id === id);
@@ -678,6 +682,7 @@
             }
             const act = d.action;
             if (act === 'profile') { showFarmProfilePanel(); return; }
+            if (act === 'farmlist') { openFarmList(); return; }
             const old = document.getElementById('farm-view'); if (old) old.remove();
             if (act === 'logout') { if (window.logout) window.logout(); }
             else if (act === 'rename') { const b = document.getElementById('rn'); if (b) b.click(); }

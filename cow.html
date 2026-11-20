@@ -273,9 +273,11 @@
     #hdr-bar .hb-logout svg{width:18px;height:18px;}
     #hdr-bar .hb-avatar{width:48px;height:48px;border-radius:50%;background:#e6f0e8;color:#17402a;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.3rem;overflow:hidden;border:2px solid rgba(255,255,255,.9);flex:none;}
     #hdr-bar .hb-avatar img{width:100%;height:100%;object-fit:cover;display:block;}
-    #hdr-bar .hb-header{display:flex;gap:8px;margin-bottom:10px;}
+    #hdr-bar .hb-header{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+    #hdr-bar .hb-row{flex-basis:100%;display:flex;justify-content:flex-end;}
     #hdr-bar .hb-header select{flex:1;font-weight:700;padding:10px;border:1px solid #d6ddd1;border-radius:12px;background:#fff;font:inherit;min-width:0;}
     #hdr-bar .hb-header button{background:#fff;border:1px solid #d6ddd1;border-radius:12px;padding:10px 12px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap;}
+    #hdr-bar .hb-farmlist{display:inline-flex;align-items:center;gap:8px;}
   </style>
 </head>
 <body>
@@ -289,8 +291,10 @@
   </div>
   <div class="hb-header">
     <select id="hb-farm" aria-label="খামার বদলান"></select>
+    
     <button data-hb="rename">নাম বদলান</button>
     <button data-hb="newfarm">+ নতুন খামার</button>
+    <div class="hb-row"><button data-hb="farmlist" class="hb-farmlist"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>খামার সমূহ</span></button></div>
   </div>
 </div>
 
