@@ -608,7 +608,7 @@
             const t = f.type || 'layer';
             // যেকোনো খামার বাছলে আগের খামার পেজ (ওভারলে) বন্ধ হবে
             const ov = document.getElementById('farm-view'); if (ov) ov.remove();
-            if (t === 'layer') { CUR = id; tab = 'dash'; attachFarm(); render(false); return; }
+            if (t === 'layer') { window.ACTIVE_FARM = { type: 'layer', fid: id }; CUR = id; tab = 'dash'; attachFarm(); render(false); return; }
             const c = FARM_CARDS.find(x => x.k === t);
             if (c && c.file) openFarmFile(c.file, f.name || c.t, id);
         }
@@ -694,7 +694,18 @@
             else if (act === 'newfarm') { const b = document.getElementById('nf'); if (b) b.click(); }
             else if (act === 'farm' && d.value) { selectFarm(d.value); }
         });
+        const FILE_TYPE = { 'cow.html': 'cow', 'broiler.html': 'broiler', 'fish.html': 'fish' };
+        window.addEventListener('popstate', () => {
+            const ids = ['farm-profile-panel', 'farm-list', 'farm-view'];
+            for (const id of ids) {
+                const el = document.getElementById(id);
+                if (el) { el.remove(); try { history.pushState({ app: 1 }, ''); } catch (e) {} return; }
+            }
+            if (typeof tab !== 'undefined' && tab !== 'dash') { tab = 'dash'; render(false); }
+            try { history.pushState({ app: 1 }, ''); } catch (e) {}
+        });
         function openFarmFile(file, title, fid) {
+            window.ACTIVE_FARM = { type: FILE_TYPE[file] || 'cow', fid: fid || null };
             const old = document.getElementById('farm-view'); if (old) old.remove();
             const appEl = document.getElementById('app-screen') || document.body;
             const topSrc = document.querySelector('#app-screen main > .top');
@@ -725,6 +736,22 @@
                 o.querySelector('#at-no').addEventListener('click', () => done(null));
                 o.querySelector('#at-ok').addEventListener('click', () => done(inp.value.trim() || null));
                 inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') done(inp.value.trim() || null); });
+            });
+        }
+        function askConfirm(msg) {
+            return new Promise((resolve) => {
+                const o = document.createElement('div');
+                o.style.cssText = 'position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
+                o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:18px;width:100%;max-width:360px;box-sizing:border-box;">'
+                    + '<div style="font-size:1.02rem;line-height:1.6;margin-bottom:14px;">' + msg + '</div>'
+                    + '<div style="display:flex;justify-content:flex-end;gap:10px;">'
+                    + '<button id="ac-no" style="background:#eef2ec;color:#1c2a21;border:0;border-radius:10px;padding:9px 16px;font-weight:700;">বাতিল</button>'
+                    + '<button id="ac-ok" style="background:#a63a2b;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;">মুছুন</button>'
+                    + '</div></div>';
+                document.body.appendChild(o);
+                const done = (v) => { o.remove(); resolve(v); };
+                o.querySelector('#ac-no').addEventListener('click', () => done(false));
+                o.querySelector('#ac-ok').addEventListener('click', () => done(true));
             });
         }
         async function createFarmFlow(c, reopen) {
@@ -783,6 +810,7 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app-screen').classList.remove('hidden');
             renderFarmBar();
+            try { history.pushState({ app: 1 }, ''); } catch (e) {}
             ME.base = name; PROF = null; updateHeader();
             unsubs.push(onSnapshot(doc(db, 'profiles', ME.uid), (snap) => {
                 PROF = snap.exists() ? snap.data() : null;
@@ -2218,9 +2246,15 @@
                 }
                 else if (a === 'resetfarm') {
                     if (!isOwner() || !CUR) return;
-                    if (!confirm('এই খামারের সব হিসাব মুছে শূন্য হয়ে যাবে। এটি আর ফেরানো যাবে না। চালিয়ে যাবেন?')) return;
-                    const word = prompt('নিশ্চিত করতে নিচের বক্সে লিখুন: রিসেট');
-                    if (word === null || word.trim() !== 'রিসেট') { showToast('রিসেট বাতিল হয়েছে'); return; }
+                    if (!(await askConfirm('এই খামারের সব হিসাব মুছে শূন্য হয়ে যাবে। এটি আর ফেরানো যাবে না।'))) return;
+                    const af = window.ACTIVE_FARM;
+                    if (af && af.type !== 'layer') {
+                        try {
+                            await deleteDoc(docx('farmtypes', af.fid || af.type));
+                            showToast('এই খামারের সব হিসাব মুছে গেছে');
+                        } catch (err) { showToast('রিসেট সমস্যা: ' + err.message, 'error'); }
+                        return;
+                    }
                     showToast('রিসেট হচ্ছে...');
                     try {
                         const pending = [];
