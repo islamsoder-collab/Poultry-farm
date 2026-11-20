@@ -608,7 +608,7 @@
             const t = f.type || 'layer';
             // যেকোনো খামার বাছলে আগের খামার পেজ (ওভারলে) বন্ধ হবে
             const ov = document.getElementById('farm-view'); if (ov) ov.remove();
-            if (t === 'layer') { CUR = id; attachFarm(); render(false); return; }
+            if (t === 'layer') { CUR = id; tab = 'dash'; attachFarm(); render(false); return; }
             const c = FARM_CARDS.find(x => x.k === t);
             if (c && c.file) openFarmFile(c.file, f.name || c.t, id);
         }
@@ -662,7 +662,10 @@
             // মেনুর বাটনে (সেটিংস, টিম, মতামত) গেলে প্যানেল বন্ধ হবে, পেজ খুলবে
             p.addEventListener('click', (e) => {
                 const t = e.target.closest && e.target.closest('[data-t]');
-                if (t && t.getAttribute('data-t') !== 'profile') p.remove();
+                if (t && t.getAttribute('data-t') !== 'profile') {
+                    p.remove();
+                    const ov = document.getElementById('farm-view'); if (ov) ov.remove();
+                }
             }, true);
         }
         window.addEventListener('message', (e) => {
