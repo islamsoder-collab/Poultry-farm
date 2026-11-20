@@ -370,18 +370,23 @@
         function saveSession(obj) { try { localStorage.setItem('farmSession', JSON.stringify(obj)); } catch (e) {} }
         function loadSession() { try { return JSON.parse(localStorage.getItem('farmSession') || 'null'); } catch (e) { return null; } }
 
-        let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null;
+        let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null, FB_ALL = false;
         const canSeeAllFb = () => ME.id === primaryOwnerEmail || ((typeof TEAM !== 'undefined' && TEAM && TEAM.ownerList) || []).some(x => x.email === ME.id);
         async function loadFb() {
-            try {
-                if (canSeeAllFb()) {
+            FB_ALL = false;
+            if (canSeeAllFb()) {
+                try {
                     const snap = await withTO(getDocs(query(collection(db, 'feedback'), orderBy('ts', 'desc'))));
                     FB_ROWS = snap.docs.map(d => d.data());
-                } else {
+                    FB_ALL = true;
+                } catch (err) { FB_ALL = false; }
+            }
+            if (!FB_ALL) {
+                try {
                     const snap = await withTO(getDocs(query(collection(db, 'feedback'), where('uid', '==', ME.uid))));
                     FB_MINE = snap.docs.map(d => d.data()).sort((x, y) => (y.ts || 0) - (x.ts || 0));
-                }
-            } catch (err) { showToast('মতামত আনা যায়নি', 'error'); }
+                } catch (err) { FB_MINE = []; }
+            }
             if (tab === 'feedback') render(true);
         }
         const fbRows = (list, showBy) => list.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(r.by || '') + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>').join('');
@@ -1543,7 +1548,7 @@
                     + '<section><button class="p" data-t="feedback">অ্যাপ সম্পর্কে মতামত বা সমস্যা</button></section>';
             },
             feedback(f) {
-                const all = canSeeAllFb();
+                const all = FB_ALL;
                 const list = all ? FB_ROWS : FB_MINE;
                 return '<section><h2>অ্যাপ সম্পর্কে মতামত বা সমস্যা</h2>'
                     + '<div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
