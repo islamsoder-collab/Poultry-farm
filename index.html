@@ -1008,7 +1008,7 @@ function showToast(msg) {
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(showToast._t);
-  showToast._t = setTimeout(() => t.classList.remove('show'), 1800);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2000);
 }
 
 function updateStock(form) {
@@ -1116,11 +1116,41 @@ function render() {
   if (view === 'fish') updateStock(app.querySelector('form[data-form="stock"]'));
   if (view === 'feed') updateFeed(app.querySelector('form[data-form="feed"]'));
 }
-function go(name) {
-  view = name in VIEWS ? name : 'home';
+function go(name, fromHistory) {
+  name = name in VIEWS ? name : 'home';
+  const cur = history.state && history.state.view;
+  if (!fromHistory) {
+    // কোনো পাতা থেকে হোমে ফেরা = এক ধাপ ব্যাক
+    if (name === 'home' && cur && cur !== 'home') { history.back(); return; }
+    if (name !== 'home') {
+      if (cur === 'home') history.pushState({ view: name }, '');
+      else history.replaceState({ view: name }, '');
+    }
+  }
+  view = name;
   window.scrollTo(0, 0);
   render();
 }
+
+// ---------- ব্যাক বাটন: হোমে দুইবার চাপলে তবেই অ্যাপ থেকে বের ----------
+// history: [guard] -> [home] -> [পাতা...]
+history.replaceState({ guard: true }, '');
+history.pushState({ view: 'home' }, '');
+let exitArmed = false;
+window.addEventListener('popstate', (e) => {
+  const st = e.state || {};
+  if (st.guard) {
+    // হোম থেকে ব্যাক চাপা হয়েছে
+    if (exitArmed) { history.back(); return; } // দ্বিতীয়বার: বের হয়ে যাবে
+    exitArmed = true;
+    showToast('আবার ব্যাক চাপলে অ্যাপ থেকে বের হবে');
+    setTimeout(() => { exitArmed = false; }, 2000);
+    history.pushState({ view: 'home' }, '');
+    go('home', true);
+    return;
+  }
+  go(st.view || 'home', true);
+});
 backBtn.addEventListener('click', () => go('home'));
 
 document.addEventListener('click', (e) => {
