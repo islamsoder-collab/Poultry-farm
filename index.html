@@ -372,6 +372,18 @@
 
         let FBTYPE = 'problem', FB_ROWS = null, FB_MINE = null;
         const canSeeAllFb = () => ME.id === primaryOwnerEmail || ((typeof TEAM !== 'undefined' && TEAM && TEAM.ownerList) || []).some(x => x.email === ME.id);
+        async function loadFb() {
+            try {
+                if (canSeeAllFb()) {
+                    const snap = await withTO(getDocs(query(collection(db, 'feedback'), orderBy('ts', 'desc'))));
+                    FB_ROWS = snap.docs.map(d => d.data());
+                } else {
+                    const snap = await withTO(getDocs(query(collection(db, 'feedback'), where('uid', '==', ME.uid))));
+                    FB_MINE = snap.docs.map(d => d.data()).sort((x, y) => (y.ts || 0) - (x.ts || 0));
+                }
+            } catch (err) { showToast('মতামত আনা যায়নি', 'error'); }
+            if (tab === 'feedback') render(true);
+        }
         const fbRows = (list, showBy) => list.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(r.by || '') + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>').join('');
         const FB_LABEL = { problem: 'সমস্যা', suggest: 'পরামর্শ', question: 'প্রশ্ন' };
         const DEVICE_ID = (() => { let d = null; try { d = localStorage.getItem('deviceId'); } catch (e) {} if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('deviceId', d); } catch (e) {} } return d; })();
@@ -1520,10 +1532,6 @@
                 return '<section><button class="p" data-t="profile">← প্রোফাইল</button></section>'
                     + '<section><h2>ভাষা / Language</h2><div class="setrow"><button data-a="setlang" data-i="bn"' + (LANG === 'bn' ? ' class="on"' : '') + '>বাংলা</button><button data-a="setlang" data-i="en"' + (LANG === 'en' ? ' class="on"' : '') + '>English</button></div></section>'
                     + '<section><h2>থিম</h2><div class="setrow"><button data-a="settheme" data-i="dark"' + (document.getElementById('app-screen').getAttribute('data-theme') === 'dark' ? ' class="on"' : '') + '>কালো</button><button data-a="settheme" data-i="light"' + (document.getElementById('app-screen').getAttribute('data-theme') !== 'dark' ? ' class="on"' : '') + '>সাদা</button></div></section>'
-                    + '<section><h2>মতামত</h2><div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
-                    + '<label>লিখুন<textarea id="fbt" rows="4"></textarea></label><button class="p" data-a="sendfb">পাঠান</button>'
-                    + (canSeeAllFb() ? '<button class="p" data-a="fbload" style="margin-top:8px">সব মতামত দেখুন</button>' + (FB_ROWS ? fbRows(FB_ROWS, true) || '<div class="mu">এখনো কোনো মতামত নেই।</div>' : '') : '<button class="p" data-a="fbmine" style="margin-top:8px">আমার মতামতগুলো দেখুন</button>' + (FB_MINE ? fbRows(FB_MINE, false) || '<div class="mu">আপনার কোনো মতামত নেই।</div>' : ''))
-                    + '</section>'
                     + (isOwner() ? '<section><h2>রিসেট</h2><button class="s d" data-a="resetfarm">সব হিসাব রিসেট করুন</button></section>' : '');
             },
             profile(f) {
@@ -1531,7 +1539,18 @@
                 return '<section class="proh"><div class="avatar big">' + avatarInner(nm) + '</div><div class="pname">' + esc(nm) + '</div><div class="mu">' + (isOwner() ? 'মালিক' : 'স্টাফ / কর্মী') + '</div>'
                     + '<div class="pbtns"><label class="fbtn">ছবি / লোগো বদলান<input type="file" id="pf" accept="image/*" style="display:none"></label>' + (p.photo ? '<button class="s d" data-a="delphoto">ছবি মুছুন</button>' : '') + '</div></section>'
                     + '<section><h2>আমার তথ্য</h2><label>নাম<input id="pn" value="' + esc(nm) + '"></label><label>খামার / ব্যবসার নাম<input id="pb" value="' + esc(p.biz || '') + '"></label><label>মোবাইল নম্বর<input id="pp" inputmode="tel" value="' + esc(p.phone || (isOwner() ? '' : ME.id)) + '"></label><label>ঠিকানা<textarea id="pa" rows="3">' + esc(p.address || '') + '</textarea></label><label>লগইন আইডি<input value="' + esc(ME.id) + '" readonly></label><button class="p" data-a="saveprof">তথ্য সেভ করুন</button></section>' + '<section><button class="p" data-t="settings">⚙ সেটিংস</button></section>'
-                    + (isOwner() ? '<section><h2>ব্যবস্থাপনা</h2><button class="p" data-t="team">মালিক ও স্টাফ যোগ / সরান</button></section>' : '');
+                    + (isOwner() ? '<section><h2>ব্যবস্থাপনা</h2><button class="p" data-t="team">মালিক ও স্টাফ যোগ / সরান</button></section>' : '')
+                    + '<section><button class="p" data-t="feedback">অ্যাপ সম্পর্কে মতামত বা সমস্যা</button></section>';
+            },
+            feedback(f) {
+                const all = canSeeAllFb();
+                const list = all ? FB_ROWS : FB_MINE;
+                return '<section><h2>অ্যাপ সম্পর্কে মতামত বা সমস্যা</h2>'
+                    + '<div class="setrow">' + ['problem', 'suggest', 'question'].map(k => '<button data-a="fbtype" data-i="' + k + '"' + (FBTYPE === k ? ' class="on"' : '') + '>' + FB_LABEL[k] + '</button>').join('') + '</div>'
+                    + '<label>লিখুন<textarea id="fbt" rows="4"></textarea></label><button class="p" data-a="sendfb">জমা দিন</button></section>'
+                    + '<section><h2>' + (all ? 'সব মতামত' : 'আজ পর্যন্ত আমার মতামত') + '</h2>'
+                    + (list ? (fbRows(list, all) || '<div class="mu">এখনো কোনো মতামত নেই।</div>') : '<div class="mu">লোড হচ্ছে...</div>')
+                    + '</section>';
             },
             tasks(f) {
                 const own = isOwner(), ds = td();
@@ -1577,7 +1596,7 @@
                 if (ae && ae.id && $('v').contains(ae)) { fid = ae.id; try { ss = ae.selectionStart; se = ae.selectionEnd; } catch (e) {} }
             }
             const tabs = isOwner() ? OWNER_TABS : STAFF_TABS;
-            const PAGES = isOwner() ? ['dash', 'exp', 'note', 'sale', 'hsale', 'feed', 'vac', 'med', 'notes', 'calc', 'egg', 'batch', 'chick', 'buy', 'rep', 'team', 'ai', 'prog', 'profile', 'settings', 'tasks'] : ['dash', 'feed', 'egg', 'batch', 'calc', 'ai', 'prog', 'profile', 'settings', 'tasks'];
+            const PAGES = isOwner() ? ['dash', 'exp', 'note', 'sale', 'hsale', 'feed', 'vac', 'med', 'notes', 'calc', 'egg', 'batch', 'chick', 'buy', 'rep', 'team', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'] : ['dash', 'feed', 'egg', 'batch', 'calc', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'];
             if (!PAGES.includes(tab)) tab = 'dash';
             const navOn = tab;
 
@@ -1945,7 +1964,7 @@
             const el = e.target.closest('[data-t],[data-a]');
             if (!el || !ME.role) return;
             const t = el.getAttribute('data-t');
-            if (t) { tab = t; if (t === 'team') loadTeam(); render(false); return; }
+            if (t) { tab = t; if (t === 'team') loadTeam(); if (t === 'feedback') loadFb(); render(false); return; }
 
             const a = el.getAttribute('data-a'), i = el.getAttribute('data-i');
             const f = F;
@@ -2139,6 +2158,7 @@
                     if (!txt) { showToast('কিছু লিখে পাঠান', 'error'); return; }
                     FB_MINE = null;
                     addDoc(collection(db, 'feedback'), { type: FBTYPE, text: txt, by: ME.name, role: ME.role, uid: ME.uid, ts: Date.now() })
+                        .then(() => loadFb())
                         .catch(err => showToast('মতামত পাঠানো যায়নি: ' + err.message, 'error'));
                     if (box) box.value = '';
                     showToast(navigator.onLine ? 'মতামত পাঠানো হয়েছে, ধন্যবাদ' : 'ফোনে জমা হয়েছে, ইন্টারনেট এলে পাঠাবে');
