@@ -1,6 +1,6 @@
 {
-  "name": "পোল্ট্রি ফার্ম ম্যানেজমেন্ট প্রো",
-  "short_name": "পোল্ট্রি ফার্ম",
+  "name": "Farm Manager Pro",
+  "short_name": "Farm Manager",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
