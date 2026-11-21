@@ -258,6 +258,8 @@
 .fbbar b{margin-right:auto;}
 .fbbar button{border:1px solid #d6ddd1;background:#fff;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;}
 .fbbar button[data-fbact=del]{background:#a63a2b;color:#fff;border-color:#a63a2b;}
+.fbreply{margin-top:6px;padding:8px 10px;background:#eef8f1;border-left:3px solid #2d6a3e;border-radius:8px;}
+.fbrb{align-self:flex-start;margin-top:6px;border:1px solid #2d6a3e;background:#fff;color:#2d6a3e;border-radius:10px;padding:5px 12px;font-weight:700;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 to-emerald-50 text-slate-800 w-full min-h-screen">
@@ -419,7 +421,7 @@
             }
             if (tab === 'feedback') render(true);
         }
-        const fbRows = (list, showBy) => list.map(r => { const who = r.authorName || r.by || r.authorEmail || 'নাম নেই'; const mail = r.authorEmail && r.authorName ? ' (' + r.authorEmail + ')' : ''; const sel = FB_SEL.has(r.id); return '<div class="fbrow' + (FB_SELMODE ? ' selmode' : '') + (sel ? ' sel' : '') + '" data-fbid="' + esc(r.id || '') + '">' + (FB_SELMODE ? '<span class="fbchk">' + (sel ? '✓' : '') + '</span>' : '') + '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(who) + esc(mail) + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div></div>'; }).join('');
+        const fbRows = (list, showBy) => list.map(r => { const who = r.authorName || r.by || r.authorEmail || 'নাম নেই'; const mail = r.authorEmail && r.authorName ? ' (' + r.authorEmail + ')' : ''; const sel = FB_SEL.has(r.id); const canReply = showBy && isOwner() && !FB_SELMODE; return '<div class="fbrow' + (FB_SELMODE ? ' selmode' : '') + (sel ? ' sel' : '') + '" data-fbid="' + esc(r.id || '') + '">' + (FB_SELMODE ? '<span class="fbchk">' + (sel ? '✓' : '') + '</span>' : '') + '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(who) + esc(mail) + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>' + (r.reply ? '<div class="fbreply"><b>উত্তর:</b> ' + esc(r.reply) + (r.replyBy ? ' — ' + esc(r.replyBy) : '') + '</div>' : '') + (canReply ? '<button type="button" class="fbrb" data-fbreply="' + esc(r.id || '') + '">' + (r.reply ? 'উত্তর বদলান' : 'উত্তর দিন') + '</button>' : '') + '</div>'; }).join('');
         const FB_LABEL = { problem: 'সমস্যা', suggest: 'পরামর্শ', question: 'প্রশ্ন' };
         // ---------- মতামত: চেপে ধরে নির্বাচন করে মুছুন (শুধু মালিক) ----------
         ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((ev) => document.addEventListener(ev, () => clearTimeout(fbPressT)));
@@ -454,6 +456,21 @@
                         render(true);
                     } catch (err) { showToast('মুছতে সমস্যা: ' + err.message, 'error'); }
                 }
+                return;
+            }
+            const rb = e.target.closest && e.target.closest('[data-fbreply]');
+            if (rb) {
+                const id = rb.dataset.fbreply;
+                const txt = await askText('উত্তর লিখুন');
+                if (!txt || !txt.trim()) return;
+                try {
+                    const by = ME.name || 'মালিক', ts = Date.now();
+                    await updateDoc(doc(db, 'feedback', id), { reply: txt.trim(), replyBy: by, replyTs: ts });
+                    const row = (FB_ROWS || []).find((r) => r.id === id);
+                    if (row) { row.reply = txt.trim(); row.replyBy = by; row.replyTs = ts; }
+                    showToast('উত্তর পাঠানো হয়েছে');
+                    render(true);
+                } catch (err) { showToast('উত্তর দেওয়া যায়নি: ' + err.message, 'error'); }
                 return;
             }
             const row = e.target.closest && e.target.closest('[data-fbid]');
@@ -686,62 +703,99 @@
             const c = FARM_CARDS.find(x => x.k === t);
             if (c && c.file) openFarmFile(c.file, f.name || c.t, id);
         }
+        let FARM_SELMODE = false; const FARM_SEL = new Set(); let farmPressT = null, farmLong = false;
         function openFarmList() {
             const old = document.getElementById('farm-list'); if (old) old.remove();
             const o = document.createElement('div');
             o.id = 'farm-list';
             o.style.cssText = 'position:fixed;inset:0;z-index:1500;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
             const own = isOwner();
+            const bar = FARM_SELMODE && own ? '<div class="fbbar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 0;padding:10px;border-radius:12px;background:#f6fdf8;border:1px solid #cdeed7;"><b style="margin-right:auto;">' + FARM_SEL.size + ' টি নির্বাচিত</b><button type="button" data-farmact="all" style="border:1px solid #d6ddd1;background:#fff;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;">সব</button><button type="button" data-farmact="del" style="border:0;background:#a63a2b;color:#fff;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;">মুছুন</button><button type="button" data-farmact="cancel" style="border:1px solid #d6ddd1;background:#fff;border-radius:10px;padding:7px 12px;font-weight:700;cursor:pointer;">বাতিল</button></div>' : '';
             const rows = FARMS.map(f => {
                 const t = f.type || 'layer';
                 const c = FARM_CARDS.find(x => x.k === t);
-                const pick = '<button data-fl="' + f.id + '" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer;font-family:inherit;">'
-                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;flex:none;border-radius:10px;object-fit:cover;">'
-                    + '<span style="min-width:0;"><b style="display:block;color:#1c2a21;overflow-wrap:anywhere;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>';
-                const del = own ? '<button data-fdel="' + f.id + '" aria-label="খামার মুছুন" style="flex:none;background:#fbeae7;color:#a63a2b;border:1px solid #f0c4bc;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer;font-family:inherit;">মুছুন</button>' : '';
-                return '<div style="display:flex;align-items:center;gap:10px;width:100%;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;margin-top:8px;box-sizing:border-box;">' + pick + del + '</div>';
+                const sel = FARM_SEL.has(f.id);
+                const chk = FARM_SELMODE ? '<span style="flex:none;width:22px;height:22px;border:2px solid #2d6a3e;border-radius:6px;display:grid;place-items:center;color:#fff;font-weight:800;background:' + (sel ? '#2d6a3e' : 'transparent') + ';">' + (sel ? '✓' : '') + '</span>' : '';
+                return '<div data-fl="' + f.id + '" style="display:flex;align-items:center;gap:12px;width:100%;background:' + (sel ? '#e8f6ec' : '#f6fdf8') + ';border:1px solid #cdeed7;border-radius:12px;padding:10px;margin-top:8px;box-sizing:border-box;cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;">'
+                    + chk
+                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;flex:none;border-radius:10px;object-fit:cover;pointer-events:none;">'
+                    + '<span style="min-width:0;pointer-events:none;"><b style="display:block;color:#1c2a21;overflow-wrap:anywhere;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></div>';
             }).join('');
             o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:16px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-sizing:border-box;">'
                 + '<div style="font-weight:700;font-size:1.1rem;">খামার সমূহ</div>'
+                + (own && !FARM_SELMODE && FARMS.length ? '<div style="font-size:.85rem;color:#455549;margin-top:4px;">মুছতে কোনো খামারে কিছুক্ষণ চেপে ধরে রাখুন</div>' : '')
+                + bar
                 + (rows || '<div style="margin-top:10px;color:#455549;">এখনো কোনো খামার নেই।</div>')
                 + '<button id="fl-close" style="margin-top:12px;width:100%;background:#eef2ec;color:#1c2a21;border:0;border-radius:10px;padding:10px;font-weight:700;">বন্ধ করুন</button>'
                 + '</div>';
             document.body.appendChild(o);
+            o.addEventListener('pointerdown', (e) => {
+                const r = e.target.closest && e.target.closest('[data-fl]');
+                if (!r || !isOwner()) return;
+                farmLong = false;
+                farmPressT = setTimeout(() => {
+                    farmLong = true; FARM_SELMODE = true; FARM_SEL.add(r.dataset.fl);
+                    if (navigator.vibrate) navigator.vibrate(30);
+                    openFarmList();
+                }, 500);
+            });
+            ['pointerup', 'pointerleave', 'pointercancel', 'pointermove'].forEach((ev) => o.addEventListener(ev, () => clearTimeout(farmPressT)));
+            o.addEventListener('contextmenu', (e) => { if (e.target.closest && e.target.closest('[data-fl]')) e.preventDefault(); });
             o.addEventListener('click', async (e) => {
-                if (e.target.id === 'fl-close' || e.target === o) { o.remove(); return; }
-                const d = e.target.closest('[data-fdel]');
-                if (d) { await deleteFarm(d.getAttribute('data-fdel')); return; }
-                const b = e.target.closest('[data-fl]');
-                if (b) { const id = b.getAttribute('data-fl'); o.remove(); selectFarm(id); }
+                if (e.target.id === 'fl-close' || e.target === o) { FARM_SELMODE = false; FARM_SEL.clear(); o.remove(); return; }
+                const act = e.target.closest && e.target.closest('[data-farmact]');
+                if (act) {
+                    const a = act.dataset.farmact;
+                    if (a === 'cancel') { FARM_SEL.clear(); FARM_SELMODE = false; openFarmList(); return; }
+                    if (a === 'all') { FARMS.forEach(f => FARM_SEL.add(f.id)); openFarmList(); return; }
+                    if (a === 'del') {
+                        if (!FARM_SEL.size) return;
+                        if (!(await askConfirm(FARM_SEL.size + ' টি খামার এবং এদের সব হিসাব মুছে যাবে। এটি আর ফেরানো যাবে না।'))) return;
+                        const ids = [...FARM_SEL];
+                        showToast('খামার মুছছে...');
+                        let failed = 0; const done = [];
+                        for (const id of ids) { try { await deleteFarmData(id); done.push(id); } catch (err) { failed++; } }
+                        FARMS = FARMS.filter(f => !done.includes(f.id));
+                        FARM_SEL.clear(); FARM_SELMODE = false;
+                        showToast(failed ? failed + ' টি খামার মোছা যায়নি' : 'খামার মুছে গেছে');
+                        openFarmList();
+                    }
+                    return;
+                }
+                const r = e.target.closest && e.target.closest('[data-fl]');
+                if (!r) return;
+                if (farmLong) { farmLong = false; return; }
+                if (FARM_SELMODE) {
+                    const id = r.dataset.fl;
+                    if (FARM_SEL.has(id)) FARM_SEL.delete(id); else FARM_SEL.add(id);
+                    if (!FARM_SEL.size) FARM_SELMODE = false;
+                    openFarmList();
+                    return;
+                }
+                o.remove();
+                selectFarm(r.dataset.fl);
             });
         }
-        async function deleteFarm(id) {
-            if (!isOwner()) return;
+        async function deleteFarmData(id) {
             const f = FARMS.find(x => x.id === id); if (!f) return;
-            if (!(await askConfirm('"' + esc(f.name || 'এই খামার') + '" এবং এর সব হিসাব মুছে যাবে। এটি আর ফেরানো যাবে না।'))) return;
-            showToast('খামার মুছছে...');
-            try {
-                const t = f.type || 'layer';
-                if (t === 'layer') {
-                    const subs = ['batches', 'feeds', 'buys', 'logs', 'fin', 'hsold', 'assistant', 'sales', 'hsales', 'memos', 'notes', 'chat'];
-                    for (const k of subs) {
-                        const snap = await getDocs(collection(db, ...BASE, 'farms', id, k));
-                        const docs = snap.docs;
-                        for (let st = 0; st < docs.length; st += 400) {
-                            const wb = writeBatch(db);
-                            docs.slice(st, st + 400).forEach(d => wb.delete(d.ref));
-                            await wb.commit();
-                        }
+            const t = f.type || 'layer';
+            if (t === 'layer') {
+                const subs = ['batches', 'feeds', 'buys', 'logs', 'fin', 'hsold', 'assistant', 'sales', 'hsales', 'memos', 'notes', 'chat'];
+                for (const k of subs) {
+                    const snap = await getDocs(collection(db, ...BASE, 'farms', id, k));
+                    const docs = snap.docs;
+                    for (let st = 0; st < docs.length; st += 400) {
+                        const wb = writeBatch(db);
+                        docs.slice(st, st + 400).forEach(d => wb.delete(d.ref));
+                        await wb.commit();
                     }
-                } else {
-                    await deleteDoc(docx('farmtypes', id));
                 }
-                await deleteDoc(doc(db, ...BASE, 'farms', id));
-                if (CUR === id) { CUR = null; window.ACTIVE_FARM = null; attachFarm(); }
-                const fv = document.getElementById('farm-view'); if (fv) fv.remove();
-                showToast('খামার মুছে গেছে');
-                openFarmList();
-            } catch (err) { showToast('মুছতে সমস্যা: ' + err.message, 'error'); }
+            } else {
+                await deleteDoc(docx('farmtypes', id));
+            }
+            await deleteDoc(doc(db, ...BASE, 'farms', id));
+            if (CUR === id) { CUR = null; window.ACTIVE_FARM = null; attachFarm(); }
+            const fv = document.getElementById('farm-view'); if (fv) fv.remove();
         }
         document.addEventListener('click', (e) => {
             const nb = e.target.closest && e.target.closest('[data-nfty]');
