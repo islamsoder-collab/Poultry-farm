@@ -626,12 +626,9 @@
             const rows = FARMS.map(f => {
                 const t = f.type || 'layer';
                 const c = FARM_CARDS.find(x => x.k === t);
-                return '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">'
-                    + '<button data-fl="' + f.id + '" style="flex:1;min-width:0;display:flex;align-items:center;gap:12px;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;text-align:left;cursor:pointer;">'
-                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;flex:none;">'
-                    + '<span style="min-width:0;"><b style="display:block;color:#1c2a21;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>'
-                    + (isOwner() ? '<button data-fdel="' + f.id + '" aria-label="মুছুন" style="flex:none;background:#fff;color:#a63a2b;border:1px solid #e9c4bd;border-radius:12px;padding:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' : '')
-                    + '</div>';
+                return '<button data-fl="' + f.id + '" style="display:flex;align-items:center;gap:12px;width:100%;background:#f6fdf8;border:1px solid #cdeed7;border-radius:12px;padding:10px;margin-top:8px;text-align:left;cursor:pointer;">'
+                    + '<img src="' + CHOOSER_PHOTOS[t] + '" alt="" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">'
+                    + '<span><b style="display:block;color:#1c2a21;">' + esc(f.name || '') + '</b><span style="font-size:.85rem;color:#455549;">' + (c ? c.t : '') + '</span></span></button>';
             }).join('');
             o.innerHTML = '<div style="background:#fff;color:#1c2a21;border-radius:16px;padding:16px;width:100%;max-width:400px;max-height:85vh;overflow-y:auto;box-sizing:border-box;">'
                 + '<div style="font-weight:700;font-size:1.1rem;">খামার সমূহ</div>'
@@ -641,41 +638,9 @@
             document.body.appendChild(o);
             o.addEventListener('click', (e) => {
                 if (e.target.id === 'fl-close' || e.target === o) { o.remove(); return; }
-                const db2 = e.target.closest('[data-fdel]');
-                if (db2) { deleteFarm(db2.getAttribute('data-fdel')); return; }
                 const b = e.target.closest('[data-fl]');
                 if (b) { const id = b.getAttribute('data-fl'); o.remove(); selectFarm(id); }
             });
-        }
-        async function deleteFarm(id) {
-            if (!isOwner()) return;
-            const f = FARMS.find(x => x.id === id);
-            if (!f) return;
-            const ok = await askConfirm('"' + esc(f.name || '') + '" খামারটি ও এর সব হিসাব মুছে যাবে। এটি আর ফেরানো যাবে না।');
-            if (!ok) return;
-            try {
-                const t = f.type || 'layer';
-                const ov = document.getElementById('farm-view'); if (ov) ov.remove();
-                const fl = document.getElementById('farm-list'); if (fl) fl.remove();
-                if (t !== 'layer') {
-                    await deleteDoc(docx('farmtypes', id));
-                } else {
-                    for (const k of ['batches', 'feeds', 'buys', 'logs', 'fin', 'hsold', 'assistant']) {
-                        const snap = await getDocs(collection(db, ...BASE, 'farms', id, k));
-                        for (let st = 0; st < snap.docs.length; st += 400) {
-                            const wb = writeBatch(db);
-                            snap.docs.slice(st, st + 400).forEach(d => wb.delete(d.ref));
-                            await wb.commit();
-                        }
-                    }
-                }
-                await deleteDoc(docx('farms', id));
-                if (CUR === id) CUR = null;
-                if (window.ACTIVE_FARM && window.ACTIVE_FARM.fid === id) window.ACTIVE_FARM = null;
-                showToast('খামারটি মুছে ফেলা হয়েছে');
-            } catch (err) {
-                showToast('মুছতে সমস্যা হয়েছে: ' + err.message, 'error');
-            }
         }
         document.addEventListener('click', (e) => {
             const nb = e.target.closest && e.target.closest('[data-nfty]');
@@ -934,7 +899,7 @@
 
         function rep(f, ym) {
             const m = (a) => a.filter(x => String(x.d).slice(0, 7) === ym);
-            const Sl = m(f.sales), feed = sm(m(f.feeds), fc), med = sm(m(f.meds), x => x.v), nt = sm(m(f.notes), x => x.v),
+            const Sl = m(f.sales), feed = sm(m(f.buys), fc), med = sm(m(f.meds), x => x.v), nt = sm(m(f.notes), x => x.v),
                 ep = sm(m(f.logs), l => l.eggs), Hs = m(f.hsales || []), inc = sm(Sl, amt) + sm(Hs, hamt);
             return { feed, med, nt, ep, es: sm(Sl, s => s.qty * 30), inc, due: sm(Sl, s => amt(s) - s.paid) + sm(Hs, s => hamt(s) - s.paid), cost: feed + med + nt, net: inc - feed - med - nt };
         }
@@ -1012,7 +977,7 @@
             const m = (a) => a.filter(x => test(String(x.d)));
             return {
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
-                exp: sm(m(f.feeds), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v),
+                exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v),
                 dead: sm(m(f.logs), l => l.dead),
                 eggs: sm(m(f.logs), l => l.eggs)
             };
@@ -1337,7 +1302,7 @@
                 eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags),
                 hold: sm(m(f.hsold || []), x => x.qty), esold: sm(m(f.sales), s => s.qty * 30),
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
-                exp: sm(m(f.feeds), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
+                exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
             };
         }
         const liveAt = (f, endDs) => sm(f.batches.filter(b => b.date <= endDs), b => b.count - sm(f.logs.filter(l => l.b === b.id && l.d <= endDs), l => l.dead) - sm((f.hsold || []).filter(x => x.b === b.id && x.d <= endDs), x => x.qty));
@@ -1497,7 +1462,7 @@
                 const m = (a) => a.filter(x => String(x.d).slice(0, 7) === ym);
                 const k = (a, b) => '<div class="k"><span>' + a + '</span><b>' + b + '</b></div>';
                 return '<section><h2>খরচ সমুহ</h2><div class="g2"><div><div class="mu">আজকের খরচ</div><div class="big neg">' + tk(T.exp) + '</div></div><div><div class="mu">এ মাসের মোট খরচ</div><div class="big neg">' + tk(M.exp) + '</div></div></div><div style="margin-top:8px">'
-                    + k('খাবার', tk(sm(m(f.feeds), fc))) + k('ঔষধ', tk(sm(m(f.meds).filter(x => (x.kind || 'med') === 'med'), x => x.v))) + k('ভ্যাকসিন', tk(sm(m(f.meds).filter(x => x.kind === 'vac'), x => x.v))) + k('অন্যান্য (নিচের খাতা)', tk(sm(m(f.notes), x => x.v)))
+                    + k('খাবার', tk(sm(m(f.buys), fc))) + k('ঔষধ', tk(sm(m(f.meds).filter(x => (x.kind || 'med') === 'med'), x => x.v))) + k('ভ্যাকসিন', tk(sm(m(f.meds).filter(x => x.kind === 'vac'), x => x.v))) + k('অন্যান্য (নিচের খাতা)', tk(sm(m(f.notes), x => x.v)))
                     + '</div><button style="width:100%;margin-top:10px" data-t="rep">মাসিক রিপোর্ট দেখুন</button></section>' + V.note(f);
             },
             hsale(f) {
@@ -1542,7 +1507,7 @@
                 let h = '';
                 if (isOwner()) {
                     const bu = srt(f.buys).slice(0, 5);
-                    h += '<section><h2>খাবার কিনেছি (মজুত বাড়াতে)</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">মজুতে যোগ করুন</button><div class="mu" style="margin-top:6px">মজুত এখন ' + bn(Math.round(feedStock(f) * 10) / 10) + ' বস্তা</div>'
+                    h += '<section><h2>খাবার কিনেছি (মজুত বাড়াতে)</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">মজুতে যোগ করুন</button>'
                         + bu.map(x => R(dt(x.d), bn(x.bags) + ' বস্তা × ' + tk(x.rate), tk(x.bags * x.rate), 'delbuy', x.id, true)).join('') + '</section>';
                 } else {
                     h += '<section><div class="mu">খাবারে এ পর্যন্ত মোট খরচ (যা কেনা হয়েছে)</div><div class="big">' + tk(buyCost(f)) + '</div></section>';
@@ -1691,6 +1656,10 @@
         /* ================= রেন্ডার ================= */
 
         function render(keep) {
+  // উপরের বার (প্রোফাইল, লগআউট, খামার বাছাই, নাম বদলান, নতুন খামার, খামার সমূহ) শুধু ড্যাশবোর্ডে
+  const isDashTab = tab === 'dash';
+  document.querySelectorAll('#app-screen main > .top, #app-screen main > header').forEach((el) => { el.style.display = isDashTab ? '' : 'none'; });
+  if (isDashTab) renderFarmBar(); else { const fbar = document.getElementById('farmbar'); if (fbar) fbar.style.display = 'none'; }
             if (!ME.role) return;
             const saved = {}; let fid = null, ss = 0, se = 0;
             if (keep) {
@@ -2229,8 +2198,7 @@
                         wb.set(doc(colx('tasks')), { title: t.title, time: t.time, date: t.daily ? '' : t.date, daily: !!t.daily, toKey: t.key, toName: p ? p.name : '', toKind: p ? p.kind : 'staff', by: ME.name, byUid: ME.uid, ts: Date.now(), lastDone: '' });
                         lines.push('• ' + (p ? p.name : '') + ': ' + fmt12(t.time) + ' — ' + t.title + (t.daily ? ' (প্রতিদিন)' : ' (' + dt(t.date) + ')'));
                     });
-                    try { await wb.commit(); }
-                    catch (err) { showToast('কাজ সেভ হয়নি: ' + err.message, 'error'); return; }
+                    await wb.commit();
                     const cnt = PENDING.length; PENDING = [];
                     if (CUR) await setDoc(doc(fcol('assistant')), { uid: ME.uid, q: 'কাজ সেভ', a: cnt + 'টি কাজ সেভ হয়েছে। ৫ মিনিট আগে শুধু সংশ্লিষ্ট ব্যক্তির ফোনে রিমাইন্ডার যাবে:\n' + lines.join('\n'), ts: Date.now() });
                     done(cnt + 'টি কাজ সেভ হয়েছে!');
