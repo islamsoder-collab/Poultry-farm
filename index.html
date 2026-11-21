@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>পোল্ট্রি ফার্ম ম্যানেজমেন্ট প্রো</title>
+    <meta name="color-scheme" content="light">
+    <title>Farm Manager Pro</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2d6a3e">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,7 +21,7 @@
         #app-screen{--bg:#f4f6f1;--sf:#fff;--ink:#1c2a21;--mu:#455549;--ln:#d6ddd1;--ac:#2d6a3e;--ai:#fff;--go:#c8962b;--rd:#a63a2b;
             background:var(--bg);color:var(--ink);font:400 18px/1.7 "Noto Sans Bengali","Hind Siliguri","Kalpurush","Nirmala UI","Vrinda",sans-serif;min-height:100vh;
             padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
-        @media (prefers-color-scheme:dark){#app-screen{--bg:#121915;--sf:#1c2720;--ink:#e8efe6;--mu:#bccbbf;--ln:#33443a;--ac:#6fbf82;--ai:#10200f;--go:#e0b550;--rd:#e68a7b;color-scheme:dark}}
+        
         #app-screen *{box-sizing:border-box}
         #app-screen main{max-width:760px;margin:0 auto;padding:12px 14px 60px}
         #app-screen .top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#17402a,#2d6a3e);color:#fff;box-shadow:0 4px 14px rgba(23,64,42,.3)}
@@ -106,7 +107,7 @@
 
         /* ===== নতুন হোম (ড্যাশবোর্ড) ===== */
         #app-screen{--soft1:#eaf8ee;--soft2:#d6f1de;--sumink:#0b3d1e;--sumln:#9bd8ae}
-        @media (prefers-color-scheme:dark){#app-screen{--soft1:#1b2e22;--soft2:#22392a;--sumink:#d8f0df;--sumln:#3c6b4a}}
+        
         #app-screen nav{display:none}
         #app-screen .dline{height:5px;border-radius:5px;background:linear-gradient(90deg,#34d399,#16a34a,#0b5d2a);margin:4px 40px 14px 2px;position:relative}
         #app-screen .dleaf{position:absolute;right:-34px;top:-16px;font-size:1.5rem}
@@ -233,8 +234,8 @@
         #app-screen .setrow button{flex:1;padding:10px}
         #app-screen .setrow button.on{background:var(--ac);color:var(--ai);border-color:var(--ac)}
         #app-screen .rmbox{background:var(--go);color:#1c1a10;border-radius:12px;padding:8px 12px;margin-bottom:12px;font-weight:600}
-            #app-screen[data-theme="light"]{--bg:#f4f6f1;--sf:#fff;--ink:#1c2a21;--mu:#455549;--ln:#d6ddd1;--ac:#2d6a3e;--ai:#fff;--go:#c8962b;--rd:#a63a2b;color-scheme:light}
-        #app-screen[data-theme="dark"]{--bg:#121915;--sf:#1c2720;--ink:#e8efe6;--mu:#bccbbf;--ln:#33443a;--ac:#6fbf82;--ai:#10200f;--go:#e0b550;--rd:#e68a7b;color-scheme:dark}
+            #app-screen[data-theme="light"]{--bg:#f4f6f1;--sf:#fff;--ink:#6e7e74;--mu:#6e7e74;--ln:#d6ddd1;--ac:#2d6a3e;--ai:#fff;--go:#c8962b;--rd:#a63a2b;color-scheme:light}
+        #app-screen[data-theme="dark"]{--bg:#121915;--sf:#1c2720;--ink:#6e7e74;--mu:#6e7e74;--ln:#33443a;--ac:#2d6a3e;--ai:#fff;--go:#c8962b;--rd:#a63a2b;color-scheme:dark}
   
     .vr-head{text-align:center}
     .vr-head img{display:block;width:min(260px,70%);margin:0 auto 6px;height:auto}
@@ -260,7 +261,9 @@
 .fbbar button[data-fbact=del]{background:#a63a2b;color:#fff;border-color:#a63a2b;}
 .fbreply{margin-top:6px;padding:8px 10px;background:#eef8f1;border-left:3px solid #2d6a3e;border-radius:8px;}
 .fbrb{align-self:flex-start;margin-top:6px;border:1px solid #2d6a3e;background:#fff;color:#2d6a3e;border-radius:10px;padding:5px 12px;font-weight:700;cursor:pointer;font-family:inherit;}
-</style>
+    /* রং শুধু অ্যাপের নিজের থিম সেটিং অনুযায়ী; ফোনের ডার্ক মোড কিছু বদলাবে না */
+    #app-screen { color-scheme: light; }
+  </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 to-emerald-50 text-slate-800 w-full min-h-screen">
 
@@ -278,7 +281,7 @@
             <div class="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-3xl shadow-md">
                 <i class="fas fa-feather-alt"></i>
             </div>
-            <h2 class="text-2xl font-bold text-slate-800">পোল্ট্রি ফার্ম ম্যানেজার</h2>
+            <h2 class="text-2xl font-bold text-slate-800">Farm Manager Pro</h2>
             <p class="text-sm text-slate-500 mt-1 mb-6">ক্লাউড সুরক্ষিত খামার হিসাব ব্যবস্থা</p>
 
             <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 py-3 px-4 rounded-xl font-semibold text-slate-700 hover:bg-emerald-50 hover:border-emerald-500 transition mb-6 shadow-sm text-sm sm:text-base">
