@@ -409,7 +409,7 @@
             }
             if (tab === 'feedback') render(true);
         }
-        const fbRows = (list, showBy) => list.map(r => '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(r.by || '') + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>').join('');
+        const fbRows = (list, showBy) => list.map(r => { const who = r.authorName || r.by || r.authorEmail || 'নাম নেই'; const mail = r.authorEmail && r.authorName ? ' (' + r.authorEmail + ')' : ''; return '<div class="sr"><span>' + esc(FB_LABEL[r.type] || '') + '</span>' + (showBy ? '<b>' + esc(who) + esc(mail) + '</b>' : '') + '</div><div class="mu">' + esc(r.text || '') + '</div>'; }).join('');
         const FB_LABEL = { problem: 'সমস্যা', suggest: 'পরামর্শ', question: 'প্রশ্ন' };
         const DEVICE_ID = (() => { let d = null; try { d = localStorage.getItem('deviceId'); } catch (e) {} if (!d) { d = Math.random().toString(36).slice(2) + Date.now().toString(36); try { localStorage.setItem('deviceId', d); } catch (e) {} } return d; })();
         let LOCKED = false;
