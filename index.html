@@ -546,8 +546,21 @@
             }
         };
 
-        onAuthStateChanged(auth, async (user) => {
+                /* আগে লগইন করা থাকলে লগইন পেজ না দেখিয়ে সরাসরি ভেতরে যাবে */
+        const _bootCached = (() => { try { return !!localStorage.getItem('farmSession'); } catch (e) { return false; } })();
+        if (_bootCached) {
+            const le = document.getElementById('login-screen'); if (le) le.classList.add('hidden');
+            const ld = document.createElement('div');
+            ld.id = 'boot-loader';
+            ld.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f3f7f4;color:#2d6a3e;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;font-size:1.1rem;font-weight:700;z-index:500;';
+            ld.textContent = 'খামার খোলা হচ্ছে...';
+            document.body.appendChild(ld);
+        }
+        function removeBootLoader() { const b = document.getElementById('boot-loader'); if (b) b.remove(); }
+
+onAuthStateChanged(auth, async (user) => {
             if (!user) {
+                removeBootLoader();
                 unsubs.forEach(u => u());
                 unsubs = [];
                 stopFarmListeners();
@@ -972,6 +985,7 @@
             const _fresh = (() => { try { const f = localStorage.getItem('freshLogin') === '1'; localStorage.removeItem('freshLogin'); return f; } catch (e) { return false; } })();
             startSessionGuard(_fresh);
             document.getElementById('login-screen').classList.add('hidden');
+            removeBootLoader();
             document.getElementById('app-screen').classList.remove('hidden');
             renderFarmBar();
             try { history.pushState({ app: 1 }, ''); } catch (e) {}
