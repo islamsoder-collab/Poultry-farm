@@ -263,10 +263,7 @@
 .fbrb{align-self:flex-start;margin-top:6px;border:1px solid #2d6a3e;background:#fff;color:#2d6a3e;border-radius:10px;padding:5px 12px;font-weight:700;cursor:pointer;font-family:inherit;}
     /* রং শুধু অ্যাপের নিজের থিম সেটিং অনুযায়ী; ফোনের ডার্ক মোড কিছু বদলাবে না */
     #app-screen { color-scheme: light; }
-          .tilew{display:flex;gap:6px;align-items:stretch;min-width:0}
-        .tilew .tile{flex:1;min-width:0}
-        .tsum{flex:none;white-space:nowrap;padding:0 12px;border-radius:12px;border:1px solid var(--ac);background:var(--ac);color:#fff;font-weight:600}
-</style>
+  </style>
 </head>
 <body class="bg-gradient-to-b from-slate-100 to-emerald-50 text-slate-800 w-full min-h-screen">
 
@@ -1460,7 +1457,7 @@
         function pagg(f, test) {
             const m = (a) => a.filter(x => test(String(x.d)));
             return {
-                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.buys), x => x.bags),
+                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags),
                 hold: sm(m(f.hsold || []), x => x.qty), esold: sm(m(f.sales), s => s.qty * 30),
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
                 exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
@@ -1596,7 +1593,7 @@
                 }
                 if (pend.length) h += '<button class="tkban" data-t="tasks"><span class="tki">' + ic('bell') + '</span><span style="flex:1"><b>আজ ' + bn(pend.length) + 'টি কাজ বাকি</b><small>পরের কাজ: ' + esc(fmt12(pend[0].time)) + ' · ' + esc(pend[0].title) + '</small></span><span class="tki">' + ic('chev') + '</span></button>';
                 const tiles = own
-                    ? [tile('exp', 'wallet', 'খরচ সমূহ'), '<div class="tilew">' + tile('sale', 'egg', 'ডিম বিক্রয়', 'trend') + '<button class="tsum" data-t="esum">মোট বিক্রয়</button></div>', tile('hsale', 'hen', 'মুরগি বিক্রয়', 'plus'),
+                    ? [tile('exp', 'wallet', 'খরচ সমূহ'), tile('sale', 'egg', 'ডিম বিক্রয়', 'trend'), tile('hsale', 'hen', 'মুরগি বিক্রয়', 'plus'),
                         tile('feed', 'sack', 'খাদ্যের হিসাব'), tile('egg', 'egg', 'ডিম ও মৃত্যু'), tile('vac', 'syringe', 'ভ্যাকসিন'),
                         tile('vacrule', 'vacrule', 'ভ্যাকসিনের নিয়মাবলী'), tile('med', 'pills', 'ঔষধ'), tile('batch', 'hen0', 'মুরগির ব্যাচ'), tile('notes', 'note', 'নোটস'), tile('calc', 'calc', 'ক্যালকুলেটর')]
                     : [tile('vacrule', 'vacrule', 'ভ্যাকসিনের নিয়মাবলী'), tile('egg', 'egg', 'ডিম ও মৃত্যু'), tile('feed', 'sack', 'খাদ্যের হিসাব'), tile('batch', 'hen0', 'মুরগির ব্যাচ'), tile('calc', 'calc', 'ক্যালকুলেটর')];
@@ -1677,19 +1674,19 @@
                     return '<section><b>' + esc(b.name) + '</b> <span class="mu">বয়স ' + bn(age(b)) + ' দিন, মুরগি ' + bn(n) + '</span><div class="mu">প্রতিটি মুরগির পেছনে এ পর্যন্ত খরচ</div><div class="big">' + (n > 0 ? tk(t / n) : '—') + '</div><div class="mu">মোট ' + tk(t) + ' (কেনা ' + tk(b.cost || 0) + ', খাবার ' + tk(sm(ofb(f.feeds, b), fc)) + ', ওষুধ ' + tk(sm(ofb(f.meds, b), m => m.v)) + '). ডিমের আয় নেই, তাই এটি লোকসান নয়, চলতি উৎপাদন ব্যয় ও বিনিয়োগ।</div></section>';
                 }).join('');
                 const ids = bs.map(b => b.id);
-                return h;
+                return h + feedForm(f, bs) + '<section><h2>বাচ্চাদের দৈনিক খাবারের হিসাব</h2>' + feedList(f, f.feeds.filter(x => ids.includes(x.b))) + '</section>';
             },
             feed(f) {
                 if (!f.batches.length) return nob();
                 let h = '';
                 if (isOwner()) {
                     const bu = srt(f.buys).slice(0, 5);
-                    h += '<section><h2>খাবার কিনেছি</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">যোগ করুন</button>'
+                    h += '<section><h2>খাবার কিনেছি (মজুত বাড়াতে)</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">মজুতে যোগ করুন</button>'
                         + bu.map(x => R(dt(x.d), bn(x.bags) + ' বস্তা × ' + tk(x.rate), tk(x.bags * x.rate), 'delbuy', x.id, true)).join('') + '</section>';
                 } else {
                     h += '<section><div class="mu">খাবারে এ পর্যন্ত মোট খরচ (যা কেনা হয়েছে)</div><div class="big">' + tk(buyCost(f)) + '</div></section>';
                 }
-                return h;
+                return h + feedForm(f, f.batches) + '<section><h2>খাবারের হিসাব</h2>' + feedList(f, f.feeds) + '</section>';
             },
             med(f) { return medPage(f, 'med'); },
             egg(f) {
@@ -1697,15 +1694,6 @@
                 const rows = srt(f.logs).slice(0, 25);
                 return '<section><h2>ডিম উৎপাদন ও মুরগির মৃত্যু</h2><div class="g2"><label>তারিখ<input type="date" id="ed" value="' + td() + '"></label><label>ব্যাচ<select id="eb">' + bopts(f.batches) + '</select></label><label>ডিম হয়েছে<input type="text" data-n="1" id="ee" inputmode="decimal"></label><label>মুরগি মরেছে<input type="text" data-n="1" id="edd" inputmode="numeric"></label></div><button class="p" data-a="addegg">সেভ করুন</button></section><section><h2>তালিকা</h2>'
                     + (rows.length ? rows.map(x => R(dt(x.d) + ' · ' + bname(f, x.b), 'ডিম ' + tray(x.eggs) + ' (' + bn(x.eggs) + 'টি) · মৃত্যু ' + bn(x.dead) + (x.by ? ' · ' + esc(x.by) : ''), '', 'delegg', x.id, canDel(x))).join('') : '<div class="mu">এখনো কিছু লেখা হয়নি।</div>') + '</section>';
-            },
-            esum(f) {
-                if (!isOwner()) return onlyOwner();
-                const S = f.sales || [], eggs = sm(S, s => s.qty * 30), money = sm(S, amt);
-                return '<section><h2>মোট ডিম বিক্রয়</h2><div class="mu">আজ পর্যন্ত সব ডিম বিক্রয়ের হিসাব (শুধু দেখার জন্য)</div>'
-                    + '<div class="k"><span>মোট বিক্রয় পাতা</span><b>' + tray(eggs) + '</b></div>'
-                    + '<div class="k"><span>মোট ডিম (টি)</span><b>' + TI(eggs) + '</b></div>'
-                    + '<div class="k"><span>মোট বিক্রয় (টাকা)</span><b>' + tk(money) + '</b></div>'
-                    + '<div class="k"><span>মোট বিক্রয়ের সংখ্যা</span><b>' + bn(S.length) + ' বার</b></div></section>';
             },
             sale(f) {
                 if (!isOwner()) return onlyOwner();
@@ -1769,13 +1757,14 @@
                 h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.bags * 10) / 10) + ' বস্তা</b></div></div>';
                 h += eggBars(P.chartTitle, P.labels, vals);
                 if (own) {
-                    const net = tot.inc - tot.exp, base = tot.inc, costPct = base > 0 ? tot.exp / base * 100 : 0;
+                    const net = tot.inc - tot.exp, base = tot.inc;
                     let parts = [], topTxt = 'লাভ', botTxt = '—';
-                    if (base > 0 && net >= 0) { parts = [{ pct: costPct, color: '#f08a24' }, { pct: net / base * 100, color: '#2563eb' }]; botTxt = bn(Math.round(net / base * 100)) + '%'; }
-                    else if (base > 0) { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'লোকসান'; botTxt = bn(Math.round(-net / base * 100)) + '%'; }
-                    else if (tot.exp > 0) { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'খরচ'; botTxt = '১০০%'; }
+                    if (base > 0) {
+                        if (net >= 0) { parts = [{ pct: tot.exp / base * 100, color: '#f08a24' }, { pct: net / base * 100, color: '#2563eb' }]; botTxt = bn(Math.round(net / base * 100)) + '%'; }
+                        else { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'লোকসান'; botTxt = bn(Math.round(-net / base * 100)) + '%'; }
+                    }
                     const lg = (c, l, v) => '<div class="lg"><i style="background:' + c + '"></i><span>' + l + '</span><b>' + v + '</b></div>';
-                    h += '<div class="pc"><h2>' + P.incTitle + '</h2><div class="donutc">' + donut(parts, topTxt, botTxt) + '<div style="flex:1;min-width:0">' + lg('#16a34a', 'মোট আয়', tk(tot.inc)) + lg('#f08a24', 'মোট খরচ', tk(tot.exp) + (base > 0 ? ' · ' + bn(Math.round(costPct)) + '%' : '')) + lg(net >= 0 ? '#2563eb' : '#d6453a', net >= 0 ? 'লাভ' : 'লোকসান', tk(Math.abs(net))) + '</div></div><div class="mu" style="margin-top:6px">খরচ = খাবার + ঔষধ/ভ্যাকসিন + খরচের খাতা। বাচ্চা কেনার টাকা ধরা নেই।</div></div>';
+                    h += '<div class="pc"><h2>' + P.incTitle + '</h2><div class="donutc">' + donut(parts, topTxt, botTxt) + '<div style="flex:1;min-width:0">' + lg('#16a34a', 'মোট আয়', tk(tot.inc)) + lg('#f08a24', 'মোট খরচ', tk(tot.exp)) + lg(net >= 0 ? '#2563eb' : '#d6453a', net >= 0 ? 'লাভ' : 'লোকসান', tk(Math.abs(net))) + '</div></div><div class="mu" style="margin-top:6px">খরচ = খাবার + ঔষধ/ভ্যাকসিন + খরচের খাতা। বাচ্চা কেনার টাকা ধরা নেই।</div></div>';
                 }
                 const sr = (i, l, v) => '<div class="sr"><span class="sri">' + ic(i) + '</span><span>' + l + '</span><b>' + v + '</b></div>';
                 h += '<div class="pc"><h2>' + P.sumTitle + '</h2>' + sr('egg', 'মোট ডিম উৎপাদন', TI(tot.eggs)) + sr('hen', 'মোট মুরগি বিক্রয়', TI(tot.hold)) + (own ? sr('egg', 'মোট ডিম বিক্রয়', TI(tot.esold)) : '') + sr('sack', 'মোট খাদ্য খরচ', bn(Math.round(tot.bags * 10) / 10) + ' বস্তা') + '</div>';
@@ -1854,7 +1843,7 @@
                 if (ae && ae.id && $('v').contains(ae)) { fid = ae.id; try { ss = ae.selectionStart; se = ae.selectionEnd; } catch (e) {} }
             }
             const tabs = isOwner() ? OWNER_TABS : STAFF_TABS;
-            const PAGES = isOwner() ? ['dash', 'exp', 'note', 'sale', 'esum', 'hsale', 'feed', 'vac', 'vacrule', 'med', 'notes', 'calc', 'egg', 'batch', 'chick', 'buy', 'rep', 'team', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'] : ['dash', 'vacrule', 'feed', 'egg', 'batch', 'calc', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'];
+            const PAGES = isOwner() ? ['dash', 'exp', 'note', 'sale', 'hsale', 'feed', 'vac', 'vacrule', 'med', 'notes', 'calc', 'egg', 'batch', 'chick', 'buy', 'rep', 'team', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'] : ['dash', 'vacrule', 'feed', 'egg', 'batch', 'calc', 'ai', 'prog', 'profile', 'settings', 'tasks', 'feedback'];
             if (!PAGES.includes(tab)) tab = 'dash';
             const navOn = tab;
 
@@ -1884,7 +1873,7 @@
         /* ===== ভাষা (বাংলা / English) ===== */
         const LANG = (() => { try { return localStorage.getItem('lang') || 'bn'; } catch (e) { return 'bn'; } })();
         const EN_DICT = [
-            ['খাবারের খরচ', 'Feed cost'], ['ডিম মজুদ', 'Egg stock'], ['মোট মুরগি', 'Total hens'], ['আজকের ডিম', "Today's eggs"],
+            ['খাবার মজুদ', 'Feed stock'], ['ডিম মজুদ', 'Egg stock'], ['মোট মুরগি', 'Total hens'], ['আজকের ডিম', "Today's eggs"],
             ['মুরগির পেছনে এ পর্যন্ত খরচ', 'Cost so far per hen'], ['/ মুরগি', '/ hen'], ['নোটের রিমাইন্ডার', 'Reminders from notes'],
             ['খরচ সমূহ', 'Expenses'], ['ডিম বিক্রয়', 'Egg sales'], ['মুরগি বিক্রয়', 'Hen sales'], ['খাদ্যের হিসাব', 'Feed'], ['ভ্যাকসিন', 'Vaccine'], ['ঔষধ', 'Medicine'], ['ওষুধ', 'Medicine'],
             ['নোটস', 'Notes'], ['ক্যালকুলেটর', 'Calculator'], ['ডিম ও মৃত্যু', 'Eggs & deaths'], ['মুরগির ব্যাচ', 'Hen batches'],
