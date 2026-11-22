@@ -1458,7 +1458,7 @@
         function pagg(f, test) {
             const m = (a) => a.filter(x => test(String(x.d)));
             return {
-                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags), buy: sm(m(f.buys), x => (+x.bags || 0) * (+x.rate || 0)),
+                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags), buy: sm(m(f.buys), x => (+x.bags || 0) * (+x.rate || 0)), buyBags: sm(m(f.buys), x => +x.bags || 0),
                 hold: sm(m(f.hsold || []), x => x.qty), esold: sm(m(f.sales), s => s.qty * 30),
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
                 exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
@@ -1705,7 +1705,7 @@
                 } else {
                     h += '<section><div class="mu">খাবারে এ পর্যন্ত মোট খরচ (যা কেনা হয়েছে)</div><div class="big">' + tk(buyCost(f)) + '</div></section>';
                 }
-                return h + feedForm(f, f.batches) + '<section><h2>খাবারের হিসাব</h2>' + feedList(f, f.feeds) + '</section>';
+                return h;
             },
             med(f) { return medPage(f, 'med'); },
             egg(f) {
@@ -1773,7 +1773,7 @@
                 h += '<div class="drow"><span class="dri">' + ic('calendar') + '</span><span class="drl">' + esc(P.label) + '</span><span class="drn"><button data-a="pnav" data-i="-1" aria-label="আগের">' + ic('chevl') + '</button><button data-a="pnav" data-i="1" aria-label="পরের"' + (P.canNext ? '' : ' disabled') + '>' + ic('chev') + '</button></span></div>';
                 h += '<div class="pc egc"><span class="egr">' + ring(pct, 98, 9) + '</span><span class="egt"><small>ডিম উৎপাদন (মোট)</small><b>' + TI(tot.eggs) + '</b><em>' + (target > 0 ? 'লক্ষ্য: ' + TI(target) : 'লক্ষ্য ঠিক করা নেই') + '</em>'
                     + (own ? '<button class="s" style="margin:4px 0 0" data-a="settarget">প্রতিদিনের লক্ষ্য বদলান</button>' : '') + '</span><span class="egp"><b>' + (pct == null ? '—' : bn(pct) + '%') + '</b><small>সম্পূর্ণ</small></span></div>';
-                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.bags * 10) / 10) + ' বস্তা</b></div></div>';
+                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.buyBags * 10) / 10) + ' বস্তা</b></div></div>';
                 h += eggBars(P.chartTitle, P.labels, vals);
                 if (own) {
                     const net = tot.inc - tot.exp, base = tot.inc;
