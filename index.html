@@ -1700,11 +1700,22 @@
                 const rows = srt(f.sales).slice(0, 25);
                 const saleAllPcs = (f.sales || []).reduce((a, x) => a + (Number(x.qty) || 0) * 30, 0);
                 const saleAllMoney = (f.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
-                return '<section><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;"><h2 style="margin:0;">ডিম বিক্রি</h2><div style="background:#eaf7ee;border:1px solid #bfe3c9;border-radius:12px;padding:8px 12px;text-align:right;min-width:150px;"><div style="font-size:.85rem;color:#455549;">মোট বিক্রি (আজ পর্যন্ত)</div><div style="font-weight:700;color:#1c2a21;">' + tray(saleAllPcs) + '</div><div style="font-weight:700;color:#1c2a21;">' + tk(saleAllMoney) + '</div></div></div><div class="g2"><label>তারিখ<input type="date" id="sd" value="' + td() + '"></label><label>ক্রেতার নাম (ঐচ্ছিক)<input id="sb" list="buyerlist" placeholder="না লিখলেও চলবে"><datalist id="buyerlist">' + f.buyers.map(b => '<option value="' + esc(b.name) + '"></option>').join('') + '</datalist></label><label>কত পাতা<input type="text" data-n="1" id="sq" inputmode="decimal" step="any"></label><label>প্রতি পিস ডিমের দাম<input type="text" data-n="1" id="sr" inputmode="decimal" step="any" value="' + rv(last(f.sales, 'rate')) + '"></label><div class="htot" id="stot" style="grid-column:span 2">মোট টাকা: ৳০</div><label style="grid-column:span 2">এখন কত টাকা পেলাম<input type="text" data-n="1" id="sp" inputmode="decimal"></label></div><button class="p" data-a="adds">বিক্রি সেভ করুন</button></section><section><h2>বিক্রির তালিকা</h2>'
+                const saleAllAgg = agg(f, () => true);
+                return '<section><h2>ডিম বিক্রি</h2><div class="g2"><label>তারিখ<input type="date" id="sd" value="' + td() + '"></label><label>ক্রেতার নাম (ঐচ্ছিক)<input id="sb" list="buyerlist" placeholder="না লিখলেও চলবে"><datalist id="buyerlist">' + f.buyers.map(b => '<option value="' + esc(b.name) + '"></option>').join('') + '</datalist></label><label>কত পাতা<input type="text" data-n="1" id="sq" inputmode="decimal" step="any"></label><label>প্রতি পিস ডিমের দাম<input type="text" data-n="1" id="sr" inputmode="decimal" step="any" value="' + rv(last(f.sales, 'rate')) + '"></label><div class="htot" id="stot" style="grid-column:span 2">মোট টাকা: ৳০</div><label style="grid-column:span 2">এখন কত টাকা পেলাম<input type="text" data-n="1" id="sp" inputmode="decimal"></label></div><button class="p" data-a="adds">বিক্রি সেভ করুন</button></section><section><h2>বিক্রির তালিকা</h2>'
                     + (rows.length ? rows.map(s => {
                         const du = amt(s) - s.paid;
                         return '<div class="row"><div>' + dt(s.d) + ' · ' + bn(s.qty) + ' পাতা' + (s.by ? ' · ' + esc(s.by) : '') + '<div class="mu">প্রতি পিস ' + tk(s.rate) + ' · মোট ' + tk(amt(s)) + ' · পেয়েছি ' + tk(s.paid) + (du > 0 ? ' · <span class="neg">বকেয়া ' + tk(du) + '</span>' : '') + '</div></div><div>' + (du > 0 ? '<span class="payrow"><input class="payin" data-n="1" inputmode="decimal" id="pi' + esc(s.id) + '" placeholder="কত টাকা"><button class="s" data-a="pay" data-i="' + esc(s.id) + '">জমা</button></span>' : '') + '<button class="s d" data-a="dels" data-i="' + esc(s.id) + '">মুছুন</button></div></div>';
-                    }).join('') : '<div class="mu">এখনো কোনো বিক্রি নেই।</div>') + '</section>';
+                    }).join('') : '<div class="mu">এখনো কোনো বিক্রি নেই।</div>') + '</section>'
+                    + '<section><h2>মোট হিসাব</h2>'
+                    + '<div class="mu">মোট কত পাতা ডিম বিক্রি করেছি</div>'
+                    + '<div style="font-size:1.6rem;font-weight:800;color:#1c2a21;margin:4px 0 14px;">' + bn(Math.trunc(saleAllPcs / 30)) + ' পাতা' + (saleAllPcs % 30 ? ' ' + bn(saleAllPcs % 30) + ' টি' : '') + '</div>'
+                    + '<div class="mu">কত টাকা দিয়ে বিক্রি করেছি</div>'
+                    + '<div style="font-size:1.6rem;font-weight:800;color:#1c2a21;margin:4px 0 0;">' + tk(saleAllMoney) + '</div>'
+                    + '<div class="mu">এ পর্যন্ত সব মিলিয়ে মোট খরচ (খামারের সব জায়গা থেকে)</div>'
+                    + '<div style="font-size:1.6rem;font-weight:800;color:#a63a2b;margin:4px 0 14px;">' + tk(saleAllAgg.exp) + '</div>'
+                    + '<div class="mu">মোট লাভ (ডিম বিক্রির টাকা − মোট খরচ)</div>'
+                    + '<div style="font-size:1.6rem;font-weight:800;margin:4px 0 0;color:' + (saleAllMoney - saleAllAgg.exp >= 0 ? '#1f7a43' : '#a63a2b') + ';">' + tk(saleAllMoney - saleAllAgg.exp) + '</div>'
+                    + '</section>';
             },
             note(f) {
                 if (!isOwner()) return onlyOwner();
