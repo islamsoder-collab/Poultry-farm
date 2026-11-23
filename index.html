@@ -706,7 +706,7 @@ onAuthStateChanged(auth, async (user) => {
         function nahidSummary() {
             if (!F) return '';
             const clean = (r) => { const o = {}; Object.keys(r || {}).forEach((k) => { if (!['id', 'ts', 'by', 'uid'].includes(k)) o[k] = r[k]; }); return o; };
-            const pack = (arr) => JSON.stringify((arr || []).slice(-300).map(clean));
+            const pack = (arr) => JSON.stringify((arr || []).map(clean));
             const all = agg(F, () => true);
             const hens = (F.batches || []).reduce((a, b) => a + live(F, b), 0);
             const money = (F.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
@@ -775,9 +775,12 @@ onAuthStateChanged(auth, async (user) => {
                 inp.value = '';
                 NAHID_MSGS.push({ me: true, t: q });
                 nahidRender(box);
-                const local = nahidLocal(q);
-                if (local) { NAHID_MSGS.push({ me: false, t: local }); nahidRender(box); return; }
-                if (!navigator.onLine) { NAHID_MSGS.push({ me: false, t: 'এই প্রশ্নের উত্তর অনলাইনে এলে দেব।' }); nahidRender(box); return; }
+                if (!navigator.onLine) {
+                    const local = nahidLocal(q);
+                    NAHID_MSGS.push({ me: false, t: local || 'এই প্রশ্নের উত্তর অনলাইনে এলে দেব।' });
+                    nahidRender(box);
+                    return;
+                }
                 NAHID_MSGS.push({ me: false, t: 'ভাবছি...' }); nahidRender(box);
                 let ans;
                 try { ans = await askNahid(q); } catch (e) { ans = 'উত্তর আনা যায়নি।'; }
