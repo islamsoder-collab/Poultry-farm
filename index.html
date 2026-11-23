@@ -700,112 +700,7 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
         const SHORT_NAME = { layer: 'লেয়ার', broiler: 'ব্রয়লার', cow: 'গরু', fish: 'মাছ' };
-        /* ===== Nahid: খামার সহকারী (শুধু লেয়ার, শুধু মালিকের Gmail) ===== */
-        const NAHID_URL = 'https://gemini-helper.hasannahidgmeil.workers.dev';
-        let NAHID_MSGS = [];
-        function nahidSummary() {
-            if (!F) return '';
-            const clean = (r) => { const o = {}; Object.keys(r || {}).forEach((k) => { if (!['id', 'ts', 'by', 'uid'].includes(k)) o[k] = r[k]; }); return o; };
-            const pack = (arr) => JSON.stringify((arr || []).map(clean));
-            const all = agg(F, () => true);
-            const hens = (F.batches || []).reduce((a, b) => a + live(F, b), 0);
-            const money = (F.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
-            return '\n\nআজকের তারিখ: ' + dStr(new Date())
-                + '\nমোট হিসাব: মোট মুরগি ' + hens + ' টি, মোট ডিম বিক্রি ' + money + ' টাকা, মোট খরচ ' + all.exp + ' টাকা, মোট লাভ ' + (money - all.exp) + ' টাকা।'
-                + '\nমুরগির ব্যাচ: ' + pack(F.batches)
-                + '\nডিম উৎপাদনের হিসাব (প্রতিদিন): ' + pack(F.logs)
-                + '\nডিম বিক্রির হিসাব (qty = পাতা, rate = প্রতি পিস দাম): ' + pack(F.sales)
-                + '\nখাবার কেনার হিসাব (bags = বস্তা, rate = প্রতি বস্তার দাম): ' + pack(F.buys)
-                + '\nঔষধ ও ভ্যাকসিনের হিসাব: ' + pack(F.meds)
-                + '\nঅন্যান্য খরচের খাতা: ' + pack(F.notes);
-        }
-        function nahidLocal(q) {
-            if (!F) return null;
-            const all = agg(F, () => true);
-            const hens = (F.batches || []).reduce((a, b) => a + live(F, b), 0);
-            const money = (F.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
-            if (/মুরগি/.test(q) && /কত|সংখ্যা|মোট/.test(q)) return 'এখন খামারে মোট মুরগি ' + bn(hens) + ' টি।';
-            if (/লাভ|লোকসান/.test(q)) {
-                const p = money - all.exp;
-                return p >= 0 ? 'মোট লাভ ' + tk(p) + '।' : 'মোট লোকসান ' + tk(-p) + '।';
-            }
-            if (/খরচ/.test(q)) return 'এ পর্যন্ত মোট খরচ ' + tk(all.exp) + '।';
-            if (/বিক্রি|বিক্রয়/.test(q)) return 'এ পর্যন্ত মোট ডিম বিক্রি ' + tk(money) + '।';
-            if (/ডিম/.test(q)) return 'এ পর্যন্ত মোট ডিম উৎপাদন ' + tray(all.eggs) + '।';
-            return null;
-        }
-        async function askNahid(q) {
-            const user = auth.currentUser;
-            if (!user) return 'আগে লগইন করুন।';
-            const token = await user.getIdToken();
-            const r = await fetch(NAHID_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ question: q + nahidSummary(), farm: 'layer' })
-            });
-            const d = await r.json();
-            if (d.answer) return d.answer;
-            if (d.error === 'not_allowed') return 'এই অ্যাকাউন্টে এই সুবিধা নেই।';
-            return 'এখন উত্তর দিতে পারছি না, একটু পরে আবার চেষ্টা করুন।';
-        }
-        function nahidRender(box) {
-            box.innerHTML = NAHID_MSGS.map((m) => '<div style="margin:6px 0;text-align:' + (m.me ? 'right' : 'left') + ';"><span style="display:inline-block;max-width:85%;padding:9px 12px;border-radius:12px;background:' + (m.me ? '#dff3e4' : '#f1f4ef') + ';color:#1c2a21;white-space:pre-wrap;">' + esc(m.t) + '</span></div>').join('');
-            box.scrollTop = box.scrollHeight;
-        }
-        function openNahid() {
-            const old = document.getElementById('nahid-panel'); if (old) old.remove();
-            const p = document.createElement('div');
-            p.id = 'nahid-panel';
-            p.style.cssText = 'position:fixed;inset:0;z-index:1400;background:#fff;display:flex;flex-direction:column;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
-            p.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#2d6a3e;color:#fff;">'
-                + '<b style="font-size:1.1rem;">Nahid</b><button id="nahid-close" style="background:#fff;color:#2d6a3e;border:0;border-radius:10px;padding:6px 12px;font-weight:700;">বন্ধ করুন</button></div>'
-                + '<div id="nahid-box" style="flex:1;overflow-y:auto;padding:10px 14px;"></div>'
-                + '<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #d6ddd1;">'
-                + '<input id="nahid-in" placeholder="প্রশ্ন লিখুন" style="flex:1;padding:10px;border:1px solid #d6ddd1;border-radius:12px;font:inherit;">'
-                + '<button id="nahid-send" style="background:#2d6a3e;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:700;">পাঠান</button></div>';
-            document.body.appendChild(p);
-            const box = document.getElementById('nahid-box');
-            if (!NAHID_MSGS.length) NAHID_MSGS.push({ me: false, t: 'আমি Nahid। খামার নিয়ে প্রশ্ন করুন।' });
-            nahidRender(box);
-            document.getElementById('nahid-close').addEventListener('click', () => p.remove());
-            const send = async () => {
-                const inp = document.getElementById('nahid-in');
-                const q = (inp.value || '').trim();
-                if (!q) return;
-                inp.value = '';
-                NAHID_MSGS.push({ me: true, t: q });
-                nahidRender(box);
-                if (!navigator.onLine) {
-                    const local = nahidLocal(q);
-                    NAHID_MSGS.push({ me: false, t: local || 'এই প্রশ্নের উত্তর অনলাইনে এলে দেব।' });
-                    nahidRender(box);
-                    return;
-                }
-                NAHID_MSGS.push({ me: false, t: 'ভাবছি...' }); nahidRender(box);
-                let ans;
-                try { ans = await askNahid(q); } catch (e) { ans = 'উত্তর আনা যায়নি।'; }
-                NAHID_MSGS.pop();
-                NAHID_MSGS.push({ me: false, t: ans }); nahidRender(box);
-            };
-            document.getElementById('nahid-send').addEventListener('click', send);
-            document.getElementById('nahid-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
-        }
-        function ensureNahidButton() {
-            let b = document.getElementById('nahid-fab');
-            if (!b) {
-                b = document.createElement('button');
-                b.id = 'nahid-fab';
-                b.type = 'button';
-                b.textContent = 'জিজ্ঞাসা করুন';
-                b.style.cssText = 'position:fixed;right:16px;bottom:18px;z-index:900;background:#2d6a3e;color:#fff;border:0;border-radius:999px;padding:12px 18px;font-weight:700;font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;';
-                b.addEventListener('click', openNahid);
-                document.body.appendChild(b);
-            }
-            b.style.display = (tab === 'dash' && isOwner()) ? '' : 'none';
-        }
-
         function renderFarmBar() {
-            ensureNahidButton();
             // শুধু "খামার সমূহ" বোতাম; নতুন খামার যোগ করা হয় "+ নতুন খামার" বোতাম থেকে
             const bar = document.getElementById('farmbar');
             if (!bar) return;
@@ -985,29 +880,6 @@ onAuthStateChanged(auth, async (user) => {
             }
             if (typeof tab !== 'undefined' && tab !== 'dash') { tab = 'dash'; render(false); }
             try { history.pushState({ app: 1 }, ''); } catch (e) {}
-        });
-        async function askNahidFarm(ft, q, summary) {
-            const user = auth.currentUser;
-            if (!user) return 'আগে লগইন করুন।';
-            const token = await user.getIdToken();
-            const r = await fetch(NAHID_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ question: q + (summary || ''), farm: ft })
-            });
-            const d = await r.json();
-            if (d.answer) return d.answer;
-            if (d.error === 'not_allowed') return 'এই অ্যাকাউন্টে এই সুবিধা নেই।';
-            return 'এখন উত্তর দিতে পারছি না, একটু পরে আবার চেষ্টা করুন।';
-        }
-        window.addEventListener('message', async (e) => {
-            const d = e.data;
-            if (!d || d.type !== 'nahidAsk') return;
-            const frame = document.getElementById('farm-frame');
-            if (!frame || frame.contentWindow !== e.source) return;
-            let answer;
-            try { answer = await askNahidFarm(d.ft, d.q, d.summary); } catch (err) { answer = 'উত্তর আনা যায়নি।'; }
-            e.source.postMessage({ type: 'nahidAnswer', answer: answer }, '*');
         });
         function openFarmFile(file, title, fid) {
             window.ACTIVE_FARM = { type: FILE_TYPE[file] || 'cow', fid: fid || null };
@@ -1600,7 +1472,7 @@ onAuthStateChanged(auth, async (user) => {
         function pagg(f, test) {
             const m = (a) => a.filter(x => test(String(x.d)));
             return {
-                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags), buy: sm(m(f.buys), x => (+x.bags || 0) * (+x.rate || 0)), buyBags: sm(m(f.buys), x => +x.bags || 0),
+                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags),
                 hold: sm(m(f.hsold || []), x => x.qty), esold: sm(m(f.sales), s => s.qty * 30),
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
                 exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
@@ -1835,19 +1707,19 @@ onAuthStateChanged(auth, async (user) => {
                     return '<section><b>' + esc(b.name) + '</b> <span class="mu">বয়স ' + bn(age(b)) + ' দিন, মুরগি ' + bn(n) + '</span><div class="mu">প্রতিটি মুরগির পেছনে এ পর্যন্ত খরচ</div><div class="big">' + (n > 0 ? tk(t / n) : '—') + '</div><div class="mu">মোট ' + tk(t) + ' (কেনা ' + tk(b.cost || 0) + ', খাবার ' + tk(sm(ofb(f.feeds, b), fc)) + ', ওষুধ ' + tk(sm(ofb(f.meds, b), m => m.v)) + '). ডিমের আয় নেই, তাই এটি লোকসান নয়, চলতি উৎপাদন ব্যয় ও বিনিয়োগ।</div></section>';
                 }).join('');
                 const ids = bs.map(b => b.id);
-                return h;
+                return h + feedForm(f, bs) + '<section><h2>বাচ্চাদের দৈনিক খাবারের হিসাব</h2>' + feedList(f, f.feeds.filter(x => ids.includes(x.b))) + '</section>';
             },
             feed(f) {
                 if (!f.batches.length) return nob();
                 let h = '';
                 if (isOwner()) {
                     const bu = srt(f.buys).slice(0, 5);
-                    h += '<section><h2>খাবার কিনেছি</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">যোগ করুন</button>'
+                    h += '<section><h2>খাবার কিনেছি (মজুত বাড়াতে)</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">মজুতে যোগ করুন</button>'
                         + bu.map(x => R(dt(x.d), bn(x.bags) + ' বস্তা × ' + tk(x.rate), tk(x.bags * x.rate), 'delbuy', x.id, true)).join('') + '</section>';
                 } else {
                     h += '<section><div class="mu">খাবারে এ পর্যন্ত মোট খরচ (যা কেনা হয়েছে)</div><div class="big">' + tk(buyCost(f)) + '</div></section>';
                 }
-                return h;
+                return h + feedForm(f, f.batches) + '<section><h2>খাবারের হিসাব</h2>' + feedList(f, f.feeds) + '</section>';
             },
             med(f) { return medPage(f, 'med'); },
             egg(f) {
@@ -1915,19 +1787,20 @@ onAuthStateChanged(auth, async (user) => {
                 h += '<div class="drow"><span class="dri">' + ic('calendar') + '</span><span class="drl">' + esc(P.label) + '</span><span class="drn"><button data-a="pnav" data-i="-1" aria-label="আগের">' + ic('chevl') + '</button><button data-a="pnav" data-i="1" aria-label="পরের"' + (P.canNext ? '' : ' disabled') + '>' + ic('chev') + '</button></span></div>';
                 h += '<div class="pc egc"><span class="egr">' + ring(pct, 98, 9) + '</span><span class="egt"><small>ডিম উৎপাদন (মোট)</small><b>' + TI(tot.eggs) + '</b><em>' + (target > 0 ? 'লক্ষ্য: ' + TI(target) : 'লক্ষ্য ঠিক করা নেই') + '</em>'
                     + (own ? '<button class="s" style="margin:4px 0 0" data-a="settarget">প্রতিদিনের লক্ষ্য বদলান</button>' : '') + '</span><span class="egp"><b>' + (pct == null ? '—' : bn(pct) + '%') + '</b><small>সম্পূর্ণ</small></span></div>';
-                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.buyBags * 10) / 10) + ' বস্তা</b></div></div>';
+                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.bags * 10) / 10) + ' বস্তা</b></div></div>';
                 h += eggBars(P.chartTitle, P.labels, vals);
                 if (own) {
                     const net = tot.inc - tot.exp, base = tot.inc;
                     let parts = [], topTxt = 'লাভ', botTxt = '—';
-                    if (base <= 0) { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'খরচ'; botTxt = '১০০%'; }
-                    else if (net >= 0) { parts = [{ pct: tot.exp / base * 100, color: '#f08a24' }, { pct: net / base * 100, color: '#2563eb' }]; botTxt = bn(Math.round(net / base * 100)) + '%'; }
-                        else { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'খরচ'; botTxt = '১০০%'; }
+                    if (base > 0) {
+                        if (net >= 0) { parts = [{ pct: tot.exp / base * 100, color: '#f08a24' }, { pct: net / base * 100, color: '#2563eb' }]; botTxt = bn(Math.round(net / base * 100)) + '%'; }
+                        else { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'লোকসান'; botTxt = bn(Math.round(-net / base * 100)) + '%'; }
+                    }
                     const lg = (c, l, v) => '<div class="lg"><i style="background:' + c + '"></i><span>' + l + '</span><b>' + v + '</b></div>';
                     h += '<div class="pc"><h2>' + P.incTitle + '</h2><div class="donutc">' + donut(parts, topTxt, botTxt) + '<div style="flex:1;min-width:0">' + lg('#16a34a', 'মোট আয়', tk(tot.inc)) + lg('#f08a24', 'মোট খরচ', tk(tot.exp)) + lg(net >= 0 ? '#2563eb' : '#d6453a', net >= 0 ? 'লাভ' : 'লোকসান', tk(Math.abs(net))) + '</div></div><div class="mu" style="margin-top:6px">খরচ = খাবার + ঔষধ/ভ্যাকসিন + খরচের খাতা। বাচ্চা কেনার টাকা ধরা নেই।</div></div>';
                 }
                 const sr = (i, l, v) => '<div class="sr"><span class="sri">' + ic(i) + '</span><span>' + l + '</span><b>' + v + '</b></div>';
-                h += '<div class="pc"><h2>' + P.sumTitle + '</h2>' + sr('egg', 'মোট ডিম উৎপাদন', TI(tot.eggs)) + sr('hen', 'মোট মুরগি বিক্রয়', TI(tot.hold)) + (own ? sr('egg', 'মোট ডিম বিক্রয়', TI(tot.esold)) : '') + sr('sack', 'মোট খাদ্য খরচ', tk(tot.buy)) + '</div>';
+                h += '<div class="pc"><h2>' + P.sumTitle + '</h2>' + sr('egg', 'মোট ডিম উৎপাদন', TI(tot.eggs)) + sr('hen', 'মোট মুরগি বিক্রয়', TI(tot.hold)) + (own ? sr('egg', 'মোট ডিম বিক্রয়', TI(tot.esold)) : '') + sr('sack', 'মোট খাদ্য খরচ', bn(Math.round(tot.bags * 10) / 10) + ' বস্তা') + '</div>';
                 return h + footBar();
             },
             settings(f) {
@@ -1995,7 +1868,6 @@ onAuthStateChanged(auth, async (user) => {
   const isDashTab = tab === 'dash';
   document.querySelectorAll('#app-screen main > .top, #app-screen main > header').forEach((el) => { el.style.display = isDashTab ? '' : 'none'; });
   if (isDashTab) renderFarmBar(); else { const fbar = document.getElementById('farmbar'); if (fbar) fbar.style.display = 'none'; }
-  ensureNahidButton();
             if (!ME.role) return;
             const saved = {}; let fid = null, ss = 0, se = 0;
             if (keep) {
