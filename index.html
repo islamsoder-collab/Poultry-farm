@@ -700,7 +700,109 @@ onAuthStateChanged(auth, async (user) => {
             }
         });
         const SHORT_NAME = { layer: 'লেয়ার', broiler: 'ব্রয়লার', cow: 'গরু', fish: 'মাছ' };
+        /* ===== Nahid: খামার সহকারী (শুধু লেয়ার, শুধু মালিকের Gmail) ===== */
+        const NAHID_URL = 'https://gemini-helper.hasannahidgmeil.workers.dev';
+        let NAHID_MSGS = [];
+        function nahidSummary() {
+            if (!F) return '';
+            const clean = (r) => { const o = {}; Object.keys(r || {}).forEach((k) => { if (!['id', 'ts', 'by', 'uid'].includes(k)) o[k] = r[k]; }); return o; };
+            const pack = (arr) => JSON.stringify((arr || []).slice(-300).map(clean));
+            const all = agg(F, () => true);
+            const hens = (F.batches || []).reduce((a, b) => a + live(F, b), 0);
+            const money = (F.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
+            return '\n\nআজকের তারিখ: ' + dStr(new Date())
+                + '\nমোট হিসাব: মোট মুরগি ' + hens + ' টি, মোট ডিম বিক্রি ' + money + ' টাকা, মোট খরচ ' + all.exp + ' টাকা, মোট লাভ ' + (money - all.exp) + ' টাকা।'
+                + '\nমুরগির ব্যাচ: ' + pack(F.batches)
+                + '\nডিম উৎপাদনের হিসাব (প্রতিদিন): ' + pack(F.logs)
+                + '\nডিম বিক্রির হিসাব (qty = পাতা, rate = প্রতি পিস দাম): ' + pack(F.sales)
+                + '\nখাবার কেনার হিসাব (bags = বস্তা, rate = প্রতি বস্তার দাম): ' + pack(F.buys)
+                + '\nঔষধ ও ভ্যাকসিনের হিসাব: ' + pack(F.meds)
+                + '\nঅন্যান্য খরচের খাতা: ' + pack(F.notes);
+        }
+        function nahidLocal(q) {
+            if (!F) return null;
+            const all = agg(F, () => true);
+            const hens = (F.batches || []).reduce((a, b) => a + live(F, b), 0);
+            const money = (F.sales || []).reduce((a, x) => a + (Number(amt(x)) || 0), 0);
+            if (/মুরগি/.test(q) && /কত|সংখ্যা|মোট/.test(q)) return 'এখন খামারে মোট মুরগি ' + bn(hens) + ' টি।';
+            if (/লাভ|লোকসান/.test(q)) {
+                const p = money - all.exp;
+                return p >= 0 ? 'মোট লাভ ' + tk(p) + '।' : 'মোট লোকসান ' + tk(-p) + '।';
+            }
+            if (/খরচ/.test(q)) return 'এ পর্যন্ত মোট খরচ ' + tk(all.exp) + '।';
+            if (/বিক্রি|বিক্রয়/.test(q)) return 'এ পর্যন্ত মোট ডিম বিক্রি ' + tk(money) + '।';
+            if (/ডিম/.test(q)) return 'এ পর্যন্ত মোট ডিম উৎপাদন ' + tray(all.eggs) + '।';
+            return null;
+        }
+        async function askNahid(q) {
+            const user = auth.currentUser;
+            if (!user) return 'আগে লগইন করুন।';
+            const token = await user.getIdToken();
+            const r = await fetch(NAHID_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ question: q + nahidSummary(), farm: 'layer' })
+            });
+            const d = await r.json();
+            if (d.answer) return d.answer;
+            if (d.error === 'not_allowed') return 'এই অ্যাকাউন্টে এই সুবিধা নেই।';
+            return 'এখন উত্তর দিতে পারছি না, একটু পরে আবার চেষ্টা করুন।';
+        }
+        function nahidRender(box) {
+            box.innerHTML = NAHID_MSGS.map((m) => '<div style="margin:6px 0;text-align:' + (m.me ? 'right' : 'left') + ';"><span style="display:inline-block;max-width:85%;padding:9px 12px;border-radius:12px;background:' + (m.me ? '#dff3e4' : '#f1f4ef') + ';color:#1c2a21;white-space:pre-wrap;">' + esc(m.t) + '</span></div>').join('');
+            box.scrollTop = box.scrollHeight;
+        }
+        function openNahid() {
+            const old = document.getElementById('nahid-panel'); if (old) old.remove();
+            const p = document.createElement('div');
+            p.id = 'nahid-panel';
+            p.style.cssText = 'position:fixed;inset:0;z-index:1400;background:#fff;display:flex;flex-direction:column;font-family:"Noto Sans Bengali","Hind Siliguri",sans-serif;';
+            p.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#2d6a3e;color:#fff;">'
+                + '<b style="font-size:1.1rem;">Nahid</b><button id="nahid-close" style="background:#fff;color:#2d6a3e;border:0;border-radius:10px;padding:6px 12px;font-weight:700;">বন্ধ করুন</button></div>'
+                + '<div id="nahid-box" style="flex:1;overflow-y:auto;padding:10px 14px;"></div>'
+                + '<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #d6ddd1;">'
+                + '<input id="nahid-in" placeholder="প্রশ্ন লিখুন" style="flex:1;padding:10px;border:1px solid #d6ddd1;border-radius:12px;font:inherit;">'
+                + '<button id="nahid-send" style="background:#2d6a3e;color:#fff;border:0;border-radius:12px;padding:10px 16px;font-weight:700;">পাঠান</button></div>';
+            document.body.appendChild(p);
+            const box = document.getElementById('nahid-box');
+            if (!NAHID_MSGS.length) NAHID_MSGS.push({ me: false, t: 'আমি Nahid। খামার নিয়ে প্রশ্ন করুন।' });
+            nahidRender(box);
+            document.getElementById('nahid-close').addEventListener('click', () => p.remove());
+            const send = async () => {
+                const inp = document.getElementById('nahid-in');
+                const q = (inp.value || '').trim();
+                if (!q) return;
+                inp.value = '';
+                NAHID_MSGS.push({ me: true, t: q });
+                nahidRender(box);
+                const local = nahidLocal(q);
+                if (local) { NAHID_MSGS.push({ me: false, t: local }); nahidRender(box); return; }
+                if (!navigator.onLine) { NAHID_MSGS.push({ me: false, t: 'এই প্রশ্নের উত্তর অনলাইনে এলে দেব।' }); nahidRender(box); return; }
+                NAHID_MSGS.push({ me: false, t: 'ভাবছি...' }); nahidRender(box);
+                let ans;
+                try { ans = await askNahid(q); } catch (e) { ans = 'উত্তর আনা যায়নি।'; }
+                NAHID_MSGS.pop();
+                NAHID_MSGS.push({ me: false, t: ans }); nahidRender(box);
+            };
+            document.getElementById('nahid-send').addEventListener('click', send);
+            document.getElementById('nahid-in').addEventListener('keydown', (e) => { if (e.key === 'Enter') send(); });
+        }
+        function ensureNahidButton() {
+            let b = document.getElementById('nahid-fab');
+            if (!b) {
+                b = document.createElement('button');
+                b.id = 'nahid-fab';
+                b.type = 'button';
+                b.textContent = 'জিজ্ঞাসা করুন';
+                b.style.cssText = 'position:fixed;right:16px;bottom:18px;z-index:900;background:#2d6a3e;color:#fff;border:0;border-radius:999px;padding:12px 18px;font-weight:700;font-family:inherit;box-shadow:0 6px 16px rgba(0,0,0,.2);cursor:pointer;';
+                b.addEventListener('click', openNahid);
+                document.body.appendChild(b);
+            }
+            b.style.display = (tab === 'dash' && isOwner()) ? '' : 'none';
+        }
+
         function renderFarmBar() {
+            ensureNahidButton();
             // শুধু "খামার সমূহ" বোতাম; নতুন খামার যোগ করা হয় "+ নতুন খামার" বোতাম থেকে
             const bar = document.getElementById('farmbar');
             if (!bar) return;
@@ -880,6 +982,29 @@ onAuthStateChanged(auth, async (user) => {
             }
             if (typeof tab !== 'undefined' && tab !== 'dash') { tab = 'dash'; render(false); }
             try { history.pushState({ app: 1 }, ''); } catch (e) {}
+        });
+        async function askNahidFarm(ft, q, summary) {
+            const user = auth.currentUser;
+            if (!user) return 'আগে লগইন করুন।';
+            const token = await user.getIdToken();
+            const r = await fetch(NAHID_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ question: q + (summary || ''), farm: ft })
+            });
+            const d = await r.json();
+            if (d.answer) return d.answer;
+            if (d.error === 'not_allowed') return 'এই অ্যাকাউন্টে এই সুবিধা নেই।';
+            return 'এখন উত্তর দিতে পারছি না, একটু পরে আবার চেষ্টা করুন।';
+        }
+        window.addEventListener('message', async (e) => {
+            const d = e.data;
+            if (!d || d.type !== 'nahidAsk') return;
+            const frame = document.getElementById('farm-frame');
+            if (!frame || frame.contentWindow !== e.source) return;
+            let answer;
+            try { answer = await askNahidFarm(d.ft, d.q, d.summary); } catch (err) { answer = 'উত্তর আনা যায়নি।'; }
+            e.source.postMessage({ type: 'nahidAnswer', answer: answer }, '*');
         });
         function openFarmFile(file, title, fid) {
             window.ACTIVE_FARM = { type: FILE_TYPE[file] || 'cow', fid: fid || null };
@@ -1867,6 +1992,7 @@ onAuthStateChanged(auth, async (user) => {
   const isDashTab = tab === 'dash';
   document.querySelectorAll('#app-screen main > .top, #app-screen main > header').forEach((el) => { el.style.display = isDashTab ? '' : 'none'; });
   if (isDashTab) renderFarmBar(); else { const fbar = document.getElementById('farmbar'); if (fbar) fbar.style.display = 'none'; }
+  ensureNahidButton();
             if (!ME.role) return;
             const saved = {}; let fid = null, ss = 0, se = 0;
             if (keep) {
