@@ -315,7 +315,7 @@
         /* সব মান ছবির শতাংশে (বাম/উপর/প্রস্থ/উচ্চতা) */
         const SPLASH_LAYOUT = {
             open: { track: { l: 11.6, t: 70.5, w: 76.8, h: 4.6 }, quote: { l: 11.5, t: 78.4, w: 77, h: 12 }, spin: { l: 50, t: 59.8, cover: 22, size: 17 } },
-            farm: { track: { l: 10.2, t: 47.2, w: 79.6, h: 4.4 }, quote: { l: 7.2, t: 60.2, w: 85.6, h: 19.2 }, spin: null }
+            farm: { track: { l: 10.2, t: 47.2, w: 79.6, h: 4.4 }, quote: { l: 7.2, t: 56.5, w: 85.6, h: 18.6 }, spin: null }
         };
         const SPIN_SVG = '<svg viewBox="0 0 100 100" width="100%" height="100%"><g class="sp-rot">' +
             Array.from({ length: 12 }, (_, k) => '<rect x="46" y="3" width="8" height="17" rx="4" fill="#2d8a3e" opacity="' + (0.2 + 0.8 * k / 11).toFixed(2) + '" transform="rotate(' + (k * 30) + ' 50 50)"/>').join('') +
@@ -1542,18 +1542,7 @@
         const OWNER_TABS = [['dash', 'ড্যাশবোর্ড'], ['chick', 'বাচ্চার খরচ'], ['feed', 'খাবার'], ['med', 'ওষুধ'], ['egg', 'ডিম ও মৃত্যু'], ['sale', 'ডিম বিক্রি'], ['note', 'খরচের খাতা'], ['buy', 'ক্রেতা'], ['rep', 'রিপোর্ট'], ['team', 'মালিক ও স্টাফ']];
         const STAFF_TABS = [['dash', 'ড্যাশবোর্ড'], ['feed', 'খাবার'], ['egg', 'ডিম ও মৃত্যু']];
 
-        function feedForm(f, bs) {
-            const rate = isOwner() ? '<label>প্রতি বস্তার দাম<input type="text" data-n="1" id="fr" inputmode="decimal" value="' + lastRate(f) + '"></label>' : '';
-            return '<section><h2>আজকের খাবার</h2><div class="g2"><label>তারিখ<input type="date" id="fd" value="' + td() + '"></label><label>ব্যাচ<select id="fb">' + bopts(bs) + '</select></label><label>কত বস্তা খেয়েছে<input type="text" data-n="1" id="fg" inputmode="decimal" step="any"></label>' + rate + '</div><button class="p" data-a="addfeed">খাবারের হিসাব সেভ করুন</button></section>';
-        }
-
-        function feedList(f, arr) {
-            const rows = srt(arr).slice(0, 25), own = isOwner();
-            return rows.length ? rows.map(x => R(dt(x.d) + ' · ' + bname(f, x.b), bn(x.bags) + ' বস্তা' + (own ? ' × ' + tk(x.rate) : '') + (x.by ? ' · ' + esc(x.by) : ''), own ? tk(fc(x)) : '', 'delfeed', x.id, canDel(x))).join('') : '<div class="mu">এখনো কিছু লেখা হয়নি।</div>';
-        }
-
-
-        /* ===== আইকন (নিজস্ব SVG, ইমোজি নয়) ===== */
+/* ===== আইকন (নিজস্ব SVG, ইমোজি নয়) ===== */
         const SK = ' fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"';
         const IC = {
             egg: '<path d="M12 2.4c-3.8 0-6.6 5.7-6.6 10.2a6.6 6.6 0 0 0 13.2 0C18.6 8.1 15.8 2.4 12 2.4z"/><path d="M8.7 12.8c0-2.2.8-4.5 2.2-6.2" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1.6" stroke-linecap="round"/>',
@@ -1584,12 +1573,12 @@
         const EGGP = '<path d="M0 -11c-5 0-8.4 7.2-8.4 12.6a8.4 8.4 0 0 0 16.8 0C8.4 -3.8 5 -11 0 -11z"/>';
         const ring = (pct, size, strokeW) => {
             size = size || 64; strokeW = strokeW || 7;
-            const r = 32 - strokeW / 2 - 1, c = 2 * Math.PI * r, p = Math.max(0, Math.min(100, pct || 0)), sc = (size === 64 ? 1 : size / 64) * 1;
-            return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" aria-hidden="true"><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="rgba(45,106,62,.2)" stroke-width="' + strokeW + '"/><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#0f6b35" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + (c * p / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/><g transform="translate(32 33) scale(.9)" fill="none" stroke="#0f6b35" stroke-width="2.2">' + EGGP + '</g></svg>';
+            const r = 32 - strokeW / 2 - 1, c = 2 * Math.PI * r, p = pct == null ? 75 : Math.max(0, Math.min(100, pct || 0)), sc = (size === 64 ? 1 : size / 64) * 1;
+            return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" aria-hidden="true"><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="rgba(45,106,62,.2)" stroke-width="' + strokeW + '"/><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#16a34a" stroke-width="' + strokeW + '" stroke-linecap="round" stroke-dasharray="' + (c * p / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 32 32)"/><g transform="translate(32 33) scale(.9)" fill="none" stroke="#16a34a" stroke-width="2.2">' + EGGP + '</g></svg>';
         };
         const donut = (parts, top, bottom) => {
             const r = 38, c = 2 * Math.PI * r; let off = 0, g = '';
-            parts.forEach(p => { const len = c * p.pct / 100; if (len > 0) g += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + p.color + '" stroke-width="15" stroke-dasharray="' + len.toFixed(1) + ' ' + (c - len).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" transform="rotate(-90 50 50)"/>'; off += len; });
+            parts.forEach(p => { const len = c * p.pct / 100; if (p.pct >= 100) { g += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + p.color + '" stroke-width="15"/>'; off += len; return; } if (len > 0) g += '<circle cx="50" cy="50" r="' + r + '" fill="none" stroke="' + p.color + '" stroke-width="15" stroke-dasharray="' + len.toFixed(1) + ' ' + (c - len).toFixed(1) + '" stroke-dashoffset="' + (-off).toFixed(1) + '" transform="rotate(-90 50 50)"/>'; off += len; });
             return '<svg viewBox="0 0 100 100" width="118" height="118" role="img"><circle cx="50" cy="50" r="' + r + '" fill="none" stroke="rgba(45,106,62,.2)" stroke-width="15"/>' + g + '<text x="50" y="45" text-anchor="middle" font-size="10" style="fill:var(--mu)">' + esc(top) + '</text><text x="50" y="62" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--ink)">' + esc(bottom) + '</text></svg>';
         };
 
@@ -1604,7 +1593,7 @@
         function pagg(f, test) {
             const m = (a) => a.filter(x => test(String(x.d)));
             return {
-                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags),
+                eggs: sm(m(f.logs), l => l.eggs), dead: sm(m(f.logs), l => l.dead), bags: sm(m(f.feeds), x => x.bags), boughtBags: sm(m(f.buys), x => +x.bags || 0),
                 hold: sm(m(f.hsold || []), x => x.qty), esold: sm(m(f.sales), s => s.qty * 30),
                 inc: sm(m(f.sales), amt) + sm(m(f.hsales || []), hamt),
                 exp: sm(m(f.buys), fc) + sm(m(f.meds), x => x.v) + sm(m(f.notes), x => x.v)
@@ -1726,7 +1715,7 @@
                 const cell = (t, i, lb, vl) => '<button class="sumc" data-t="' + t + '"><span class="sumi">' + pic(i) + '</span><span class="sumt"><small>' + lb + '</small><b>' + vl + '</b></span></button>';
                 const tile = (t, i, lb, badge) => '<button class="tile" data-t="' + t + '"><span class="ti">' + pic(i) + '</span><span class="tl">' + lb + '</span><span class="tc">' + ic('chev') + '</span></button>';
                 let h = '<div class="dline"><span class="dleaf">' + ic('leaf') + '</span></div>';
-                h += '<div class="sumbar">' + cell('feed', 'sack', 'খাবারে এ পর্যন্ত খরচ', tk(buyCost(f)))
+                h += '<div class="sumbar">' + (own ? cell('feed', 'sack', 'খাবারে এ পর্যন্ত খরচ', tk(buyCost(f))) : '')
                     + (own ? cell('egg', 'egg', 'ডিম মজুদ', tray(eggStock(f))) : cell('egg', 'egg', 'আজকের ডিম', tray(tEggs)))
                     + cell('batch', 'hen0', 'মোট মুরগি', bn(sm(f.batches, b => live(f, b)))) + '</div>';
                 if (own) {
@@ -1839,7 +1828,7 @@
                     return '<section><b>' + esc(b.name) + '</b> <span class="mu">বয়স ' + bn(age(b)) + ' দিন, মুরগি ' + bn(n) + '</span><div class="mu">প্রতিটি মুরগির পেছনে এ পর্যন্ত খরচ</div><div class="big">' + (n > 0 ? tk(t / n) : '—') + '</div><div class="mu">মোট ' + tk(t) + ' (কেনা ' + tk(b.cost || 0) + ', খাবার ' + tk(sm(ofb(f.feeds, b), fc)) + ', ওষুধ ' + tk(sm(ofb(f.meds, b), m => m.v)) + '). ডিমের আয় নেই, তাই এটি লোকসান নয়, চলতি উৎপাদন ব্যয় ও বিনিয়োগ।</div></section>';
                 }).join('');
                 const ids = bs.map(b => b.id);
-                return h + feedForm(f, bs) + '<section><h2>বাচ্চাদের দৈনিক খাবারের হিসাব</h2>' + feedList(f, f.feeds.filter(x => ids.includes(x.b))) + '</section>';
+                return h;
             },
             feed(f) {
                 if (!f.batches.length) return nob();
@@ -1848,10 +1837,8 @@
                     const bu = srt(f.buys).slice(0, 5);
                     h += '<section><h2>খাবার কিনেছি (মজুত বাড়াতে)</h2><div class="g3"><label>তারিখ<input type="date" id="pd" value="' + td() + '"></label><label>কত বস্তা<input type="text" data-n="1" id="pg" inputmode="decimal" step="any"></label><label>প্রতি বস্তার দাম<input type="text" data-n="1" id="pr" inputmode="decimal" value="' + lastRate(f) + '"></label></div><button class="p" data-a="addbuy">মজুতে যোগ করুন</button>'
                         + bu.map(x => R(dt(x.d), bn(x.bags) + ' বস্তা × ' + tk(x.rate), tk(x.bags * x.rate), 'delbuy', x.id, true)).join('') + '</section>';
-                } else {
-                    h += '<section><div class="mu">খাবারে এ পর্যন্ত মোট খরচ (যা কেনা হয়েছে)</div><div class="big">' + tk(buyCost(f)) + '</div></section>';
                 }
-                return h + feedForm(f, f.batches) + '<section><h2>খাবারের হিসাব</h2>' + feedList(f, f.feeds) + '</section>';
+                return h;
             },
             med(f) { return medPage(f, 'med'); },
             egg(f) {
@@ -1919,11 +1906,12 @@
                 h += '<div class="drow"><span class="dri">' + ic('calendar') + '</span><span class="drl">' + esc(P.label) + '</span><span class="drn"><button data-a="pnav" data-i="-1" aria-label="আগের">' + ic('chevl') + '</button><button data-a="pnav" data-i="1" aria-label="পরের"' + (P.canNext ? '' : ' disabled') + '>' + ic('chev') + '</button></span></div>';
                 h += '<div class="pc egc"><span class="egr">' + ring(pct, 98, 9) + '</span><span class="egt"><small>ডিম উৎপাদন (মোট)</small><b>' + TI(tot.eggs) + '</b><em>' + (target > 0 ? 'লক্ষ্য: ' + TI(target) : 'লক্ষ্য ঠিক করা নেই') + '</em>'
                     + (own ? '<button class="s" style="margin:4px 0 0" data-a="settarget">প্রতিদিনের লক্ষ্য বদলান</button>' : '') + '</span><span class="egp"><b>' + (pct == null ? '—' : bn(pct) + '%') + '</b><small>সম্পূর্ণ</small></span></div>';
-                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.bags * 10) / 10) + ' বস্তা</b></div></div>';
+                h += '<div class="stat4"><div class="st">' + ic('egg') + '<small>প্রতিদিন গড়</small><b>' + TI(avg) + '</b></div><div class="st">' + ic('hen') + '<small>জীবিত মুরগি</small><b>' + TI(liveN) + '</b></div><div class="st red">' + ic('hen') + '<small>মৃত মুরগি</small><b>' + TI(tot.dead) + '</b></div><div class="st">' + ic('sack') + '<small>খাদ্য খরচ</small><b>' + bn(Math.round(tot.boughtBags * 10) / 10) + ' বস্তা</b></div></div>';
                 h += eggBars(P.chartTitle, P.labels, vals);
                 if (own) {
                     const net = tot.inc - tot.exp, base = tot.inc;
                     let parts = [], topTxt = 'লাভ', botTxt = '—';
+                    if (base <= 0) { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = net >= 0 ? 'লাভ' : 'লোকসান'; botTxt = '—'; }
                     if (base > 0) {
                         if (net >= 0) { parts = [{ pct: tot.exp / base * 100, color: '#f08a24' }, { pct: net / base * 100, color: '#2563eb' }]; botTxt = bn(Math.round(net / base * 100)) + '%'; }
                         else { parts = [{ pct: 100, color: '#f08a24' }]; topTxt = 'লোকসান'; botTxt = bn(Math.round(-net / base * 100)) + '%'; }
@@ -1932,7 +1920,7 @@
                     h += '<div class="pc"><h2>' + P.incTitle + '</h2><div class="donutc">' + donut(parts, topTxt, botTxt) + '<div style="flex:1;min-width:0">' + lg('#16a34a', 'মোট আয়', tk(tot.inc)) + lg('#f08a24', 'মোট খরচ', tk(tot.exp)) + lg(net >= 0 ? '#2563eb' : '#d6453a', net >= 0 ? 'লাভ' : 'লোকসান', tk(Math.abs(net))) + '</div></div><div class="mu" style="margin-top:6px">খরচ = খাবার + ঔষধ/ভ্যাকসিন + খরচের খাতা। বাচ্চা কেনার টাকা ধরা নেই।</div></div>';
                 }
                 const sr = (i, l, v) => '<div class="sr"><span class="sri">' + ic(i) + '</span><span>' + l + '</span><b>' + v + '</b></div>';
-                h += '<div class="pc"><h2>' + P.sumTitle + '</h2>' + sr('egg', 'মোট ডিম উৎপাদন', TI(tot.eggs)) + sr('hen', 'মোট মুরগি বিক্রয়', TI(tot.hold)) + (own ? sr('egg', 'মোট ডিম বিক্রয়', TI(tot.esold)) : '') + sr('sack', 'মোট খাদ্য খরচ', bn(Math.round(tot.bags * 10) / 10) + ' বস্তা') + '</div>';
+                h += '<div class="pc"><h2>' + P.sumTitle + '</h2>' + sr('egg', 'মোট ডিম উৎপাদন', TI(tot.eggs)) + sr('hen', 'মোট মুরগি বিক্রয়', TI(tot.hold)) + (own ? sr('egg', 'মোট ডিম বিক্রয়', TI(tot.esold)) : '') + sr('sack', 'মোট খাদ্য খরচ', bn(Math.round(tot.boughtBags * 10) / 10) + ' বস্তা') + '</div>';
                 return h + footBar();
             },
             settings(f) {
@@ -2414,21 +2402,6 @@
                     if (!confirm('মুছে ফেলবেন?')) return;
                     const wb = writeBatch(db);
                     wb.delete(doc(fcol('buys'), i)); wb.delete(doc(fcol('fin'), 'br_' + i));
-                    await wb.commit(); done("মুছে ফেলা হয়েছে");
-                }
-                else if (a === 'addfeed') {
-                    if (need(num('fg'), 'কত বস্তা খেয়েছে লিখুন')) return;
-                    if (need(val('fb'), 'ব্যাচ বেছে নিন')) return;
-                    const id = newId('feeds'), wb = writeBatch(db);
-                    wb.set(doc(fcol('feeds'), id), { d: val('fd') || td(), b: val('fb'), bags: num('fg'), ...stamp() });
-                    if (isOwner() && num('fr')) wb.set(doc(fcol('fin'), 'fr_' + id), { t: 'frate', ref: id, rate: num('fr'), ts: Date.now() });
-                    await wb.commit(); done();
-                }
-                else if (a === 'delfeed') {
-                    if (!confirm('মুছে ফেলবেন?')) return;
-                    const wb = writeBatch(db);
-                    wb.delete(doc(fcol('feeds'), i));
-                    if (isOwner()) wb.delete(doc(fcol('fin'), 'fr_' + i));
                     await wb.commit(); done("মুছে ফেলা হয়েছে");
                 }
                 else if (a === 'addmed') {
